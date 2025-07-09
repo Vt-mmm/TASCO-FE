@@ -1,0 +1,38 @@
+{
+  "compilerOptions": {
+    "target": "es5",
+    "lib": ["dom", "dom.iterable", "esnext"],
+
+    "allowJs": true,
+    "skipLibCheck": true,
+    "esModuleInterop": true,
+    "allowSyntheticDefaultImports": true,
+    "strict": true,
+    "forceConsistentCasingInFileNames": true,
+    "noFallthroughCasesInSwitch": true,
+    "module": "esnext",
+    "moduleResolution": "node",
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "noEmit": true,
+    "jsx": "react-jsx",
+    "baseUrl": "src",
+    "paths": {
+      "hooks/*": ["hooks/*"],
+      "components/*": ["components/*"],
+      "sections/*": ["sections/*"],
+      "reduxStore/*": ["redux/*"],
+      "assets/*": ["assets/*"],
+      "utils/*": ["utils/*"],
+      "pages/*": ["pages/*"],
+      "layout/*": ["layout/*"],
+      "types/*": ["types/*"],
+      "common/*": ["common/*"],
+      "constants/*": ["constants/*"],
+      "routes/*": ["routes/*"],
+      "theme/*": ["theme/*"],
+      "axiosClient/*": ["axiosClient/*"]
+    }
+  },
+  "include": ["src"]
+}

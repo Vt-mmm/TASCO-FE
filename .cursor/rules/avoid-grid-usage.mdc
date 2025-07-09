@@ -1,0 +1,40 @@
+---
+description: 
+globs: 
+alwaysApply: false
+---
+# Rule: Tránh Sử Dụng MUI Grid Khi Không Cần Thiết
+
+Để giảm thiểu lỗi type, lỗi props hoặc các vấn đề tương thích version (đặc biệt khi nâng cấp giữa các version MUI), hãy tránh sử dụng component Grid của MUI nếu không thực sự cần thiết.
+
+## Lý do
+- Grid của MUI dễ gặp lỗi type khi dùng các props như `item`, `xs`, `sm`, `md` nếu không đúng version hoặc cấu hình.
+- Khi nâng cấp từ MUI v5 lên v6, Grid đổi tên thành Grid2, gây lỗi import và props.
+- Layout lưới thông thường có thể xử lý tốt bằng Box với flexbox hoặc CSS grid mà không cần Grid của MUI.
+
+## Khuyến nghị
+- **Ưu tiên dùng**: [Box](mdc:src/components) với các thuộc tính `display: 'flex'`, `flexWrap`, `gap`, `width` responsive, hoặc `display: 'grid'` với `gridTemplateColumns`.
+- **Chỉ dùng Grid khi**: Cần các tính năng đặc biệt của Grid hoặc đã chắc chắn version, type, props tương thích.
+
+## Ví dụ chuyển đổi
+**Tránh dùng:**
+```tsx
+<Grid container spacing={3}>
+  <Grid item xs={12} sm={6} md={4}>...</Grid>
+  <Grid item xs={12} sm={6} md={4}>...</Grid>
+</Grid>
+```
+
+**Nên dùng:**
+```tsx
+<Box sx={{ display: 'flex', flexWrap: 'wrap', mx: -1 }}>
+  <Box sx={{ width: { xs: '100%', sm: '50%', md: '33.33%' }, p: 1 }}>...</Box>
+  <Box sx={{ width: { xs: '100%', sm: '50%', md: '33.33%' }, p: 1 }}>...</Box>
+</Box>
+```
+
+## Lưu ý
+- Khi cần layout phức tạp, có thể dùng thêm thuộc tính `gap`, `justifyContent`, `alignItems` trên Box.
+- Nếu dùng CSS grid, có thể dùng `display: 'grid'` và `gridTemplateColumns` trên Box.
+
+Áp dụng rule này sẽ giúp code frontend ổn định, dễ bảo trì và tránh lỗi khi nâng cấp thư viện.

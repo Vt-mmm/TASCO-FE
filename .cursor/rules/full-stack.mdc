@@ -1,0 +1,309 @@
+---
+description: 
+globs: 
+alwaysApply: false
+---
+# Quy trình phát triển tính năng đầy đủ
+
+Tài liệu này mô tả quy trình phát triển đầy đủ để thêm một tính năng mới vào hệ thống, từ model dữ liệu đến giao diện người dùng.
+
+## 1. Tạo model và types
+
+Bắt đầu bằng việc định nghĩa model và types cho tính năng:
+
+- Tạo interface trong thư mục `src/common/@types/`
+- Tạo enums nếu cần trong `src/common/enums/`
+- Tạo model trong `src/common/models/`
+
+Tham khảo mẫu:
+```typescript
+// Ví dụ interface
+export interface PsychologistFormData {
+  firstName: string;
+  lastName: string;
+  email: string;
+  bio: string;
+  specializations: string[];
+  // ... các trường khác
+}
+
+// Ví dụ enum
+export enum Role {
+  TELLME_USER = 'TELLME_USER',
+  TELLME_ADMIN = 'TELLME_ADMIN',
+  TELLME_PSYCHOLOGIST = 'TELLME_PSYCHOLOGIST'
+}
+```
+
+## 2. Cấu hình route API
+
+Thêm các API endpoint cần thiết vào file `src/constants/routesApiKeys.ts`:
+
+```typescript
+// Thêm API endpoints
+export const ROUTES_API_USER = {
+  // ... các API khác
+  GET_PUBLIC_PSYCHOLOGISTS: '/api/v1/psychologists/public',
+  // ... 
+};
+```
+
+## 3. Tạo Redux Slice
+
+Tạo một Redux slice mới trong thư mục `src/reduxStore/`:
+
+```typescript
+// src/reduxStore/feature/featureSlice.ts
+import { createSlice } from '@reduxjs/toolkit';
+import { Feature } from 'common/models';
+
+interface FeatureState {
+  data: Feature[];
+  isLoading: boolean;
+  error: string | null;
+  currentFeature: Feature | null;
+}
+
+const initialState: FeatureState = {
+  data: [],
+  isLoading: false,
+  error: null,
+  currentFeature: null
+};
+
+const featureSlice = createSlice({
+  name: 'feature',
+  initialState,
+  reducers: {
+    // Các reducers sync
+  },
+  extraReducers: (builder) => {
+    // Xử lý các async thunks
+  }
+});
+
+export const { /*các actions*/ } = featureSlice.actions;
+export default featureSlice.reducer;
+```
+
+## 4. Tạo Redux Thunks
+
+Tạo các thunks trong `src/reduxStore/feature/featureThunk.ts`:
+
+```typescript
+import { createAsyncThunk } from '@reduxjs/toolkit';
+import { axiosClient } from 'axiosClient/axiosClient';
+import { ROUTES_API_USER } from 'constants/routesApiKeys';
+
+// Helper function cho API calls
+async function callApiWithRetry<T>(apiCall: () => Promise<T>, maxRetries = 2): Promise<T> {
+  let lastError;
+  for (let attempt = 0; attempt <= maxRetries; attempt++) {
+    try {
+      if (attempt > 0) {
+        await new Promise(resolve => setTimeout(resolve, 1000 * attempt));
+      }
+      return await apiCall();
+    } catch (error) {
+      lastError = error;
+      const axiosError = error as AxiosError;
+      if (axiosError.response?.status === 401) {
+        break;
+      }
+    }
+  }
+  throw lastError;
+}
+
+// Thunk để lấy dữ liệu
+export const getFeatures = createAsyncThunk(
+  'feature/getAll',
+  async (_, { rejectWithValue }) => {
+    try {
+      const response = await callApiWithRetry(() => 
+        axiosClient.get(ROUTES_API_USER.GET_FEATURES)
+      );
+      return response.data.data || [];
+    } catch (error) {
+      // Error handling without console logging
+      const err = error as AxiosError<ErrorResponse>;
+      return rejectWithValue(err.response?.data?.message || 'Failed to fetch features');
+    }
+  }
+);
+```
+
+## 5. Thêm Slice vào Store
+
+Đăng ký slice trong `src/redux/config.ts`:
+
+```typescript
+import featureReducer from './feature/featureSlice';
+
+export const tellme = configureStore({
+  reducer: {
+    // ... reducers khác
+    feature: featureReducer,
+  },
+  // ... các cấu hình khác
+});
+```
+
+## 6. Tạo Components UI
+
+### 6.1. Tạo các Common Components
+
+Tạo các components tái sử dụng trong `src/components/`:
+
+```tsx
+// src/components/feature/FeatureCard.tsx
+import React from 'react';
+import { Box, Typography } from '@mui/material';
+import { Feature } from 'common/models';
+
+interface FeatureCardProps {
+  feature: Feature;
+  onSelect?: (feature: Feature) => void;
+}
+
+export default function FeatureCard({ feature, onSelect }: FeatureCardProps) {
+  return (
+    <Box sx={{ /* styles */ }} onClick={() => onSelect?.(feature)}>
+      <Typography variant="h6">{feature.name}</Typography>
+      {/* ... nội dung khác */}
+    </Box>
+  );
+}
+```
+
+### 6.2. Tạo Sections
+
+Tạo các sections cho pages trong `src/sections/user/featurepage/`:
+
+```tsx
+// src/sections/user/featurepage/FeatureListing.tsx
+import React, { useEffect } from 'react';
+import { Box, Container, Typography, Grid } from '@mui/material';
+import { useAppDispatch, useAppSelector } from 'reduxStore/config';
+import { getFeatures } from 'reduxStore/feature/featureThunk';
+import FeatureCard from 'components/feature/FeatureCard';
+
+export default function FeatureListing() {
+  const dispatch = useAppDispatch();
+  const { data, isLoading } = useAppSelector((state) => state.feature);
+  
+  useEffect(() => {
+    dispatch(getFeatures());
+  }, [dispatch]);
+  
+  return (
+    <Container>
+      <Typography variant="h4" sx={{ mb: 3 }}>Danh sách tính năng</Typography>
+      {isLoading ? (
+        <Box>Đang tải...</Box>
+      ) : (
+        <Grid container spacing={3}>
+          {data.map((feature) => (
+            <Grid item xs={12} sm={6} md={4} key={feature.id}>
+              <FeatureCard feature={feature} />
+            </Grid>
+          ))}
+        </Grid>
+      )}
+    </Container>
+  );
+}
+```
+
+## 7. Tạo Page Component
+
+Tạo page component trong thư mục `src/pages/user/`:
+
+```tsx
+// src/pages/user/FeaturePage.tsx
+import React from 'react';
+import { Box } from '@mui/material';
+import Header from 'layout/components/header/Header';
+import Footer from 'layout/components/footer/Footer';
+import FeatureListing from 'sections/user/featurepage/FeatureListing';
+
+export default function FeaturePage() {
+  return (
+    <Box sx={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
+      <Header />
+      <Box sx={{ flexGrow: 1, py: 5 }}>
+        <FeatureListing />
+      </Box>
+      <Footer />
+    </Box>
+  );
+}
+```
+
+## 8. Cấu hình Routes
+
+### 8.1. Thêm Path vào paths.ts
+
+Thêm đường dẫn mới vào `src/routes/paths.ts`:
+
+```typescript
+export const PATH_USER = {
+  // ... các paths khác
+  feature: '/feature',
+  featureDetail: '/feature/:id'
+};
+```
+
+### 8.2. Cập nhật Route Config
+
+Thêm route mới vào `src/routes/config/userRoutes.ts`:
+
+```typescript
+import FeaturePage from 'pages/user/FeaturePage';
+// ... imports khác
+
+export const userRoutes: Route[] = [
+  // ... các routes khác
+  {
+    path: PATH_USER.feature,
+    component: <FeaturePage />,
+    restricted: true
+  },
+];
+```
+
+### 8.3. Cập nhật Router
+
+Thêm route vào file `src/routes/router.tsx` nếu cần thiết:
+
+```tsx
+// Lazy load component
+const FeaturePage = lazy(() => import("pages/user/FeaturePage"));
+
+// Trong Routes config
+<ReactRoute
+  path={PATH_USER.feature}
+  element={<FeaturePage />}
+/>
+```
+
+## 9. Kiểm tra và Tối ưu
+
+Sau khi hoàn thành, hãy kiểm tra:
+
+- Tất cả paths được cập nhật đúng
+- Redux devtools để xem luồng dữ liệu
+- UI responsive trên nhiều kích cỡ màn hình
+- Console.log đã được xóa khỏi code production
+
+## Lưu ý khi làm việc
+
+- KHÔNG sử dụng Grid của MUI khi không cần thiết, ưu tiên dùng Box với CSS Flexbox hoặc CSS Grid để tránh lỗi type và vấn đề tương thích phiên bản.
+- Đặt tên hàm, biến rõ ràng và dễ hiểu
+- Sử dụng các Hook như useCallback, useMemo để tối ưu hiệu năng
+- Xóa hết console.log trong code production
+- Tuân thủ đúng cấu trúc thư mục đã được thiết lập
+- Sử dụng TypeScript một cách nghiêm ngặt với đầy đủ type định nghĩa
+
+
+

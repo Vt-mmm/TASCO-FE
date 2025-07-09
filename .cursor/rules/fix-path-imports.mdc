@@ -1,0 +1,71 @@
+---
+description: 
+globs: 
+alwaysApply: false
+---
+# Hướng dẫn khắc phục lỗi "Failed to resolve import"
+
+## Vấn đề thường gặp
+
+Lỗi "Failed to resolve import" xuất hiện khi:
+- Vite không thể tìm thấy module được import
+- Đường dẫn import không khớp với cấu hình alias
+- Alias được định nghĩa trong một file nhưng không có trong file còn lại
+
+## Quy trình sửa lỗi
+
+### 1. Kiểm tra đồng bộ giữa Vite và TypeScript
+
+```typescript
+// vite.config.ts
+resolve: {
+  alias: {
+    components: path.resolve(__dirname, "./src/components")
+  }
+}
+
+// tsconfig.json
+"paths": {
+  "components/*": ["components/*"]
+}
+```
+
+### 2. Kiểm tra cú pháp import
+
+```javascript
+// ✅ ĐÚNG với cấu hình trên
+import Helmet from "components/helmet/Helmet";
+
+// ❌ SAI - Thiếu đường dẫn chi tiết
+import { Helmet } from "components";
+```
+
+### 3. Thứ tự kiểm tra khi gặp lỗi
+
+1. Kiểm tra xem file có tồn tại không
+2. Kiểm tra cấu hình alias trong `vite.config.ts`
+3. Kiểm tra cấu hình paths trong `tsconfig.json`
+4. Điều chỉnh import để khớp với cấu hình
+
+### 4. Kiểm tra nhanh lỗi
+
+Khi gặp lỗi "Failed to resolve import", thực hiện các bước sau:
+
+```bash
+# Kiểm tra xem file có tồn tại không
+ls src/components/helmet/Helmet.tsx
+
+# Kiểm tra cấu hình Vite 
+cat vite.config.ts | grep -A 10 alias
+
+# Kiểm tra cấu hình TypeScript
+cat tsconfig.json | grep -A 10 paths
+```
+
+### 5. Giải pháp phổ biến
+
+1. **Sửa đồng bộ cấu hình**: Đảm bảo rằng alias trong vite.config.ts và paths trong tsconfig.json khớp nhau
+2. **Sử dụng đường dẫn tuyệt đối**: Nếu không chắc về alias, sử dụng đường dẫn tuyệt đối
+3. **Kiểm tra exports**: Đảm bảo component được export đúng cách
+
+

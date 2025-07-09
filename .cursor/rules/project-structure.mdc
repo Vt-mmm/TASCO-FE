@@ -1,0 +1,114 @@
+---
+description: 
+globs: 
+alwaysApply: false
+---
+# Project Structure Guide
+
+This project is organized into a detailed hierarchy, with each folder and file serving a specific role. The structure is designed for clear separation of concerns, maintainability, and seamless integration with the .NET backend.
+
+## Root
+- **[src/](mdc:src)**: Main source code directory for all application logic, UI, and integration.
+
+### Assets
+- **[assets/](mdc:src/assets)**: Static files and images.
+  - **[brands/](mdc:src/assets/brands)**: Brand logos and related images.
+  - **[Capturescreen/](mdc:src/assets/Capturescreen)**: User or system screenshots.
+  - Other images: e.g., `login-image.png`, `chatbot.svg`.
+
+### API Client & Integration
+- **[axiosClient/](mdc:src/axiosClient)**: Centralized HTTP client for all backend API requests.
+  - `axiosClient.ts`: Configures Axios with base URL `/api/v1/` for .NET backend.
+  - `setupClientInterceptors.ts`: Handles JWT token attachment and global error handling.
+  - `setupFormDataInterceptors.ts`: Handles form data requests.
+  - Add API functions here, grouped by backend controller (e.g., `accountApi.ts`).
+
+### Shared Types, Models, Enums
+- **[common/](mdc:src/common)**: Shared code for type safety and backend contract mirroring.
+  - **[@types/](mdc:src/common/@types)**: Common TypeScript types (e.g., `form.ts`, `route.ts`, `sidebar.ts`).
+  - **[enums/](mdc:src/common/enums)**: Shared enums, including those matching backend enums (e.g., `role.enum.ts`).
+  - **[models/](mdc:src/common/models)**: Data models/interfaces for backend DTOs (e.g., `user.ts`, `token.ts`).
+
+### UI Components
+- **[components/](mdc:src/components)**: Reusable UI building blocks.
+  - **[3d/](mdc:src/components/3d)**: 3D visual components (e.g., `LoginBackground3D.tsx`).
+  - **[chatbot/](mdc:src/components/chatbot)**: Chatbot widget (`ChatbotWidget.tsx`).
+  - **[helmet/](mdc:src/components/helmet)**: Document head management (`Helmet.tsx`).
+  - **[common/](mdc:src/components/common)**: Shared UI elements (currently empty).
+  - **[folder/](mdc:src/components/folder)**: Reserved for future use.
+  - `index.ts`: Entry point for component exports.
+
+### Constants
+- **[constants/](mdc:src/constants)**: Application-wide constants and message definitions.
+  - `routesApiKeys.ts`, `storageKeys.ts`: Key names for routing and storage.
+  - `EngMessageConstant.ts`, `VieMessageConstant.ts`, `EngErrorMessageConstant.ts`, `VieErrorMessageConstant.ts`: Multilingual message and error constants.
+
+### Custom Hooks
+- **[hooks/](mdc:src/hooks)**: Reusable logic for React components.
+  - `useLocalStorage.ts`: Token storage/retrieval for backend auth.
+  - `useValidationForm.ts`, `useNavigate.ts`, `usePopover.ts`, `useResponsive.ts`: UI and logic utilities.
+
+### Layout
+- **[layout/](mdc:src/layout)**: Application layout and structure.
+  - **[components/header/](mdc:src/layout/components/header)**: Main header (`Header.tsx`).
+  - **[components/footer/](mdc:src/layout/components/footer)**: Main footer (`Footer.tsx`).
+  - **[dashboard/](mdc:src/layout/dashboard)**: Reserved for dashboard layouts.
+
+### Pages (Routing Entry Points)
+- **[pages/](mdc:src/pages)**: Top-level pages for routing.
+  - **[auth/](mdc:src/pages/auth)**: Auth pages (`LoginPage.tsx`, `SignUp.tsx`, etc.).
+  - **[user/](mdc:src/pages/user)**: User-facing pages (`Homepage.tsx`, `Profilepage.tsx`, `Servicepage.tsx`, etc.).
+  - **[error/](mdc:src/pages/error)**: Error pages (`Page404.tsx`, `Page500.tsx`, etc.).
+
+### Redux State Management
+- **[redux/](mdc:src/redux)**: Application state management.
+  - `config.ts`: Redux configuration.
+  - **[auth/](mdc:src/redux/auth)**: Auth state logic (`authSlice.ts`, `authThunks.ts`).
+
+### Routing
+- **[routes/](mdc:src/routes)**: Application route definitions.
+  - `paths.ts`, `router.tsx`, `userRouter.tsx`, `publicRouter.tsx`: Route configuration.
+  - **[confiig/](mdc:src/routes/confiig)**: Additional route configs (`userRoutes.tsx`, `publicRoutes.tsx`).
+
+### Feature Sections
+- **[sections/](mdc:src/sections)**: Domain-specific feature modules.
+  - **[auth/](mdc:src/sections/auth)**: Auth forms (`LoginForm.tsx`, `RegisterForm.tsx`, etc.).
+  - **[user/](mdc:src/sections/user)**: User feature modules:
+    - **[homepage/](mdc:src/sections/user/homepage)**: Homepage sections (`HeroSections.tsx`, `BannerSection.tsx`, etc.).
+    - **[newspage/](mdc:src/sections/user/newspage)**: News sections (`ActivityNewsSection.tsx`, `PopularNewsSection.tsx`, etc.).
+    - **[servicepage/](mdc:src/sections/user/servicepage)**: Service sections (`ServiceSection.tsx`, `ServiceTypeSection.tsx`, etc.).
+    - **[supporterpage/](mdc:src/sections/user/supporterpage)**: Supporter sections (`SupportersSection.tsx`, `PsychologistsSection.tsx`).
+    - **[test/](mdc:src/sections/user/test)**: Test/quiz sections (`TestCardsSection.tsx`).
+
+### Theme & Style
+- **[theme/](mdc:src/theme)**: Theme customization and Material-UI overrides.
+  - **[overrides/](mdc:src/theme/overrides)**: Component-specific theme overrides (`Button.ts`, `Input.ts`, etc.).
+
+### Utilities
+- **[utils/](mdc:src/utils)**: Utility functions for common tasks (`utils.ts`, `handleResponseMessage.ts`, etc.).
+
+### Types
+- **[types/](mdc:src/types)**: Global TypeScript type definitions (currently empty or reserved).
+
+### Entry Points & Config
+- `App.tsx`: Main React application component.
+- `main.tsx`: Application bootstrap and rendering.
+- `vite.config.ts`: Vite build configuration.
+- `tsconfig.json`: TypeScript configuration.
+
+---
+
+## Backend Integration Notes (Summary)
+- All API requests are routed through `axiosClient/` with JWT and error handling.
+- DTOs/interfaces in `common/models/` and `@types/` must mirror backend models for type safety.
+- Redux and hooks manage authentication state and token storage.
+- Error messages from backend are parsed and displayed using shared logic.
+
+Refer to this guide for a comprehensive map of where to find, place, and update code in the project, especially when working with backend data and API integration.
+
+
+
+
+
+
+

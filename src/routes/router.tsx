@@ -3,6 +3,7 @@ import { Routes, Route as ReactRoute, Navigate } from "react-router-dom";
 
 // Routes config
 import { userRoutes } from "./config/userRoutes";
+import { adminRoutes } from "./config/adminRoutes";
 import {
   PATH_AUTH,
   PATH_ERROR,
@@ -14,6 +15,7 @@ import {
 import { Role } from "../common/enums/role.enum";
 import { getAccessToken } from "../utils";
 import { useAppSelector } from "../redux/configStore";
+import AdminRouter from "./adminRouter";
 
 // Temporary placeholder components until pages are created
 const PlaceholderPage = ({ pageName }: { pageName: string }) => (
@@ -127,6 +129,12 @@ const renderRoutes = (
   ));
 };
 
+const renderAdminRoutes = (routes: typeof adminRoutes) => {
+  return routes.map((route, index) => (
+    <ReactRoute key={index} path={route.path} element={route.component} />
+  ));
+};
+
 function AppRouter() {
   const [isInitializing, setIsInitializing] = useState(true);
 
@@ -178,8 +186,12 @@ function AppRouter() {
         {/* User Routes from config */}
         {renderRoutes(userRoutes, isAuthenticated, accessToken)}
 
-        {/* Legacy routes - will be removed later */}
+        {/* ADMIN ROUTES - Protected by AdminRouter */}
+        <ReactRoute element={<AdminRouter />}>
+          {renderAdminRoutes(adminRoutes)}
+        </ReactRoute>
 
+        {/* Legacy routes - will be removed later */}
 
         {/* Specific Board - Protected route */}
         <ReactRoute

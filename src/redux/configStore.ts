@@ -7,6 +7,7 @@ import commentsReducer from "./comments/commentsSlice";
 import workAreasReducer from "./workAreas/workAreasSlice";
 import workTasksReducer from "./workTasks/workTasksSlice";
 import taskObjectivesReducer from "./taskObjectives/taskObjectivesSlice";
+import adminDashboardReducer from "./adminDashboard/adminDashboardSlice";
 
 export const tasco = configureStore({
   reducer: {
@@ -17,6 +18,7 @@ export const tasco = configureStore({
     workAreas: workAreasReducer,
     workTasks: workTasksReducer,
     taskObjectives: taskObjectivesReducer,
+    adminDashboard: adminDashboardReducer,
   },
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware({

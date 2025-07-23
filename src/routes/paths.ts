@@ -2,7 +2,7 @@ import { path } from "../utils";
 const ROOTS_ERROR = "/error";
 const ROOTS_AUTH = "/auth";
 const ROOTS_USER = "/user";
-const ROOTS_ADMIN_DASHBOARD = "/admin/dashboard";
+const ROOTS_ADMIN = "/admin";
 
 export const PATH_ERROR = {
   noPermission: path(ROOTS_ERROR, "/403"),
@@ -53,7 +53,7 @@ export const PATH_USER = {
 };
 
 export const PATH_ADMIN = {
-  dashboard: path(ROOTS_ADMIN_DASHBOARD, "/dashboard"),
+  dashboard: path(ROOTS_ADMIN, "/dashboard"),
 };
 export const PATH_PUBLIC = {
   homepage: "/",

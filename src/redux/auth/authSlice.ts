@@ -1,5 +1,5 @@
-import { PayloadAction, createSlice, createAsyncThunk } from "@reduxjs/toolkit";
-import { UserAuth, UserInfo } from "../../common/models";
+import { PayloadAction, createSlice } from "@reduxjs/toolkit";
+import { UserAuth, UserInfo, AccountInfo } from "../../common/models";
 import { toast } from "react-toastify";
 import {
   getAuthenticated,
@@ -19,7 +19,7 @@ import {
   loginThunk,
   logoutThunk,
   registerThunk,
-  googleLoginThunk,
+  getUserInfoThunk,
 } from "../../redux/auth/authThunks";
 
 export interface AuthState {
@@ -33,6 +33,7 @@ export interface AuthState {
   email: string;
   userAuth: UserAuth | null;
   userInfo: UserInfo | null;
+  accountInfo: AccountInfo | null;
   errorMessage: string | null;
 }
 
@@ -52,6 +53,7 @@ const initialState: AuthState = {
   email: getEmailInStorage,
   userAuth: getUserInStorage,
   userInfo: getUserInfoInStorage,
+  accountInfo: null,
   errorMessage: null,
 };
 
@@ -117,6 +119,7 @@ const authSlice = createSlice({
         isAuthenticated: false,
         userAuth: null,
         userInfo: null,
+        accountInfo: null,
         email: "",
         isLogout: true,
       };
@@ -158,22 +161,30 @@ const authSlice = createSlice({
       })
 
       // Add Google login cases
-      .addCase(loginbygoogle.pending, (state) => {
+
+      .addCase(getUserInfoThunk.pending, (state) => {
         state.isLoading = true;
+        state.isError = false;
+        state.errorMessage = null;
+        console.log("getUserInfoThunk.pending - state reset");
       })
-      .addCase(loginbygoogle.fulfilled, (state, action) => {
+      .addCase(getUserInfoThunk.fulfilled, (state, action) => {
         state.isLoading = false;
         state.isError = false;
         state.isSuccess = true;
-        state.isAuthenticated = true;
-        state.userAuth = action.payload;
+        state.accountInfo = action.payload;
+        state.errorMessage = null;
+        console.log(
+          "getUserInfoThunk.fulfilled - accountInfo set:",
+          action.payload
+        );
       })
-      .addCase(loginbygoogle.rejected, (state, action) => {
+      .addCase(getUserInfoThunk.rejected, (state, action) => {
         state.isLoading = false;
         state.isError = true;
         state.isSuccess = false;
-        state.isAuthenticated = false;
         state.errorMessage = action.payload as string;
+        console.log("getUserInfoThunk.rejected - error:", action.payload);
       })
 
       .addCase(logoutThunk.pending, (state) => {
@@ -216,33 +227,8 @@ export {
   loginThunk as login,
   logoutThunk as logout,
   registerThunk as register,
+  getUserInfoThunk as getUserInfo,
 };
-
-// Định nghĩa lại Google login thunk để khớp với kiểu dữ liệu
-export const loginbygoogle = createAsyncThunk<
-  UserAuth,
-  { credential: string; navigate?: (path: string) => void },
-  { rejectValue: string }
->("auth/loginbygoogle", async (params, thunkAPI) => {
-  try {
-    // Sử dụng type assertion chi tiết hơn thay vì any
-    return await googleLoginThunk(
-      {
-        googleToken: params.credential,
-        navigate: params.navigate,
-      },
-      {
-        dispatch: thunkAPI.dispatch,
-        rejectWithValue: thunkAPI.rejectWithValue,
-      } as unknown as Parameters<typeof googleLoginThunk>[1]
-    );
-  } catch (error) {
-    if (error instanceof Error) {
-      return thunkAPI.rejectWithValue(error.message);
-    }
-    return thunkAPI.rejectWithValue("Đăng nhập Google thất bại");
-  }
-});
 
 const authReducer = authSlice.reducer;
 

@@ -76,3 +76,9 @@ export interface AvatarUpdateRequest {
   avatarUrl: string;
   avatarFileName: string;
 }
+export interface AccountInfo {
+  userId: string;
+  email: string;
+  fullName: string;
+  roles: string[];
+}

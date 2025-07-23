@@ -107,3 +107,34 @@ export interface UpdateProjectRequestRequest {
   status: "approved" | "rejected";
   rejectionReason?: string;
 }
+
+// Interfaces for Admin Dashboard API Response
+export interface AdminProjectMember {
+  userId: string;
+  role: "OWNER" | "MEMBER";
+  approvedStatus: "APPROVED" | "PENDING" | "REJECTED" | "REMOVED";
+  approvedUpdateDate: string;
+  isRemoved: boolean;
+  removeDate: string | null;
+}
+
+export interface AdminProject {
+  id: string;
+  name: string;
+  description: string;
+  ownerId: string;
+  createdAt: string;
+  updateBy: string;
+  updatedAt: string;
+  members: AdminProjectMember[];
+  isDeleted: boolean;
+  deletedAt: string | null;
+}
+
+export interface PaginatedProjectResponse {
+  projects: AdminProject[];
+  totalPage: number;
+  pageSize: number;
+  pageNumber: number;
+  totalCount: number;
+}

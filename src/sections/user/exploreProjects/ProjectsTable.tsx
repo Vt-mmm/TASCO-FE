@@ -89,6 +89,23 @@ const ProjectsTable: React.FC<ProjectsTableProps> = ({
     }
   };
 
+  // Helper function to get active member count (filter out removed members)
+  const getActiveMemberCount = (project: Project): number => {
+    if (!project.members || project.members.length === 0) {
+      return 1; // At least the owner
+    }
+    
+    // Filter out removed members, same logic as getProjectByIdThunk
+    const activeMembers = project.members.filter(
+      (member) =>
+        !member.isRemoved &&
+        member.approvedStatus !== "REMOVED" &&
+        member.approvedStatus !== "removed"
+    );
+    
+    return Math.max(activeMembers.length, 1); // At least 1 (owner)
+  };
+
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
     return date.toLocaleDateString("vi-VN", {
@@ -439,7 +456,7 @@ const ProjectsTable: React.FC<ProjectsTableProps> = ({
                         fontWeight: 700,
                       }}
                     >
-                      {project.members?.length || 1}
+                      {getActiveMemberCount(project)}
                     </Typography>
                   </Box>
                 </TableCell>

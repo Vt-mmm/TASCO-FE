@@ -1,9 +1,13 @@
-import { createAsyncThunk, PayloadAction } from "@reduxjs/toolkit";
+import { createAsyncThunk } from "@reduxjs/toolkit";
 import { axiosClient } from "../../axiosClient/axiosClient";
-import { LoginForm, Params, ChangePasswordForm } from "../../common/types";
+import { LoginForm, Params } from "../../common/types";
 import { Role } from "../../common/enums/role.enum";
-import { UserAuth } from "../../common/models";
-import { ROUTES_API_AUTH } from "../../constants/routesApiKeys";
+import { UserAuth, AccountInfo } from "../../common/models";
+import { ApiResponse } from "../../common/types/common";
+import {
+  ROUTES_API_AUTH,
+  ROUTES_API_ACCOUNTS,
+} from "../../constants/routesApiKeys";
 import { PATH_AUTH, PATH_ADMIN, PATH_USER } from "../../routes/paths";
 import {
   /* getAccessToken, */ // Commenting out unused import
@@ -14,7 +18,6 @@ import {
   setAuthenticated,
   setRefreshToken,
   setUserAuth,
-  getUserAuth,
 } from "../../utils";
 
 // Define local action creator functions instead of importing from the slice
@@ -58,17 +61,6 @@ interface RegisterForm {
   roleId: string[];
 }
 
-// Định nghĩa kiểu cho ThunkAPI để tránh sử dụng any
-interface GoogleLoginThunkAPI {
-  dispatch: (action: PayloadAction<string>) => void;
-  rejectWithValue: <T>(value: T) => T;
-}
-
-// Định nghĩa kiểu params cho Google Login
-interface GoogleLoginParams {
-  googleToken: string;
-  navigate?: (path: string) => void;
-}
 // Hàm helper để đảm bảo người dùng có vai trò cần thiết
 const ensureUserRoles = (roles?: string[] | null): string[] => {
   if (!roles || roles.length === 0) {
@@ -320,199 +312,32 @@ export const logoutThunk = createAsyncThunk<
   }
 });
 
-// Change Password thunk
-export const changePasswordThunk = createAsyncThunk<
+// Get User Info thunk
+export const getUserInfoThunk = createAsyncThunk<
+  AccountInfo,
   void,
-  Params<ChangePasswordForm>,
   { rejectValue: string }
->("auth/changePassword", async (params, thunkAPI) => {
-  // Safely extract data from params with a default empty object
-  const data: Partial<ChangePasswordForm> = params?.data || {};
-  const callback = params?.callback;
-
+>("auth/getUserInfo", async (_, { rejectWithValue }) => {
   try {
-    // Kiểm tra xem người dùng đăng nhập bằng Google hay không
-    const userAuth = getUserAuth();
-    if (userAuth && userAuth.authProvider === "google") {
-      const errorMessage =
-        "Tài khoản của bạn đăng nhập bằng Google. Vui lòng sử dụng tính năng quản lý tài khoản của Google để đổi mật khẩu.";
-      thunkAPI.dispatch(setMessageError(errorMessage));
+    // The interceptor returns the response body, which we type as ApiResponse.
+    const response = (await axiosClient.post(
+      ROUTES_API_ACCOUNTS.GET_INFO
+    )) as ApiResponse<AccountInfo>;
 
-      // Call the error callback if provided
-      if (callback?.onError) {
-        callback.onError(errorMessage);
-      }
-
-      return thunkAPI.rejectWithValue(errorMessage);
+    if (response && response.success) {
+      return response.data;
     }
 
-    await axiosClient.post(ROUTES_API_AUTH.CHANGE_PASSWORD, data);
-
-    const message = handleResponseMessage("Đổi mật khẩu thành công!");
-    thunkAPI.dispatch(setMessageSuccess(message));
-
-    // Call the success callback if provided
-    if (callback?.onSuccess) {
-      callback.onSuccess();
-    }
-  } catch (error: unknown) {
+    throw new Error(response?.message || "Invalid response from server");
+  } catch (error) {
     const err = error as {
-      response?: {
-        data?: {
-          message?: string;
-        };
-      };
+      response?: { data?: { message?: string } };
       message?: string;
     };
-
     const errorMessage =
-      err.response?.data?.message ||
-      err.message ||
-      handleResponseMessage("Đổi mật khẩu thất bại. Vui lòng thử lại!");
-    thunkAPI.dispatch(setMessageError(errorMessage));
-
-    // Call the error callback if provided
-    if (callback?.onError) {
-      callback.onError(errorMessage);
-    }
-
-    return thunkAPI.rejectWithValue(errorMessage);
+      err?.response?.data?.message ||
+      err?.message ||
+      "An unknown error occurred";
+    return rejectWithValue(errorMessage);
   }
 });
-
-// Google Login thunk implementation - sửa lại định nghĩa để tương thích hơn với AsyncThunk
-export const googleLoginThunk = async (
-  params: GoogleLoginParams,
-  thunkAPI: GoogleLoginThunkAPI
-): Promise<UserAuth> => {
-  const { googleToken, navigate } = params;
-  try {
-    // Đúng format mà API backend mong đợi { "token": "string" }
-    const apiResponse = await axiosClient.post(
-      `${ROUTES_API_AUTH.LOGIN_GOOGLE}`,
-      { token: googleToken }
-    );
-
-    // Xử lý dữ liệu phụ thuộc vào cấu trúc thực tế của apiResponse
-    interface GoogleLoginResponse {
-      userId: string;
-      email: string;
-      fullName?: string;
-      roles: string[];
-      tokens: {
-        accessToken: string;
-        refreshToken: string;
-      };
-    }
-
-    // Nếu apiResponse.data tồn tại và có userId, dùng nó
-    // Nếu không, kiểm tra xem apiResponse có trực tiếp userId không
-    const responseData: GoogleLoginResponse =
-      apiResponse.data &&
-      typeof apiResponse.data === "object" &&
-      "userId" in apiResponse.data
-        ? (apiResponse.data as GoogleLoginResponse)
-        : (apiResponse as unknown as GoogleLoginResponse);
-
-    if (!responseData || !responseData.userId) {
-      const message = handleResponseMessage(
-        "Error: Backend did not return valid user information."
-      );
-      thunkAPI.dispatch(setMessageError(message));
-      // Sử dụng non-null assertion thay vì as any
-      return thunkAPI.rejectWithValue(message) as unknown as UserAuth;
-    }
-
-    // Ánh xạ dữ liệu từ backend sang model frontend
-    const user: UserAuth = {
-      userId: responseData.userId,
-      email: responseData.email,
-      username: responseData.fullName || responseData.email,
-      roles: Array.isArray(responseData.roles) ? responseData.roles : [],
-      authProvider: "google",
-    };
-
-    // Store tokens and user data
-    if (
-      responseData.tokens &&
-      responseData.tokens.accessToken &&
-      responseData.tokens.refreshToken
-    ) {
-      setAccessToken(responseData.tokens.accessToken);
-      setRefreshToken(responseData.tokens.refreshToken);
-    } else {
-      const errorMsg = "Token không được cung cấp từ API";
-      thunkAPI.dispatch(setMessageError(errorMsg));
-      return thunkAPI.rejectWithValue(errorMsg) as unknown as UserAuth;
-    }
-
-    setUserAuth(user);
-    setAuthenticated();
-    const message = handleResponseMessage("Đăng nhập Google thành công.");
-    thunkAPI.dispatch(setMessageSuccess(message));
-
-    // Navigate based on user role if a navigator is provided
-    if (navigate) {
-      if (user.roles.includes(Role.TASCO_ADMIN)) {
-        // Using window.location.href for a "hard" navigation to avoid React Router confusion
-        window.location.href = PATH_ADMIN.dashboard;
-      } else {
-        navigate(PATH_USER.homepage);
-      }
-    }
-
-    return user;
-  } catch (error: unknown) {
-    let errorMessage = "Đăng nhập Google thất bại. Vui lòng thử lại!";
-
-    if (error instanceof Error) {
-      errorMessage = error.message;
-    } else if (typeof error === "object" && error !== null) {
-      const errorObj = error as Record<string, unknown>;
-
-      // Kiểm tra cụ thể cho lỗi "Email already exists"
-      if (
-        "response" in errorObj &&
-        errorObj.response &&
-        typeof errorObj.response === "object"
-      ) {
-        const responseObj = errorObj.response as Record<string, unknown>;
-
-        if (
-          "data" in responseObj &&
-          responseObj.data &&
-          typeof responseObj.data === "object"
-        ) {
-          const dataObj = responseObj.data as Record<string, unknown>;
-
-          // Kiểm tra cấu trúc lỗi của API
-          if (
-            "message" in dataObj &&
-            Array.isArray(dataObj.message) &&
-            dataObj.message.length > 0
-          ) {
-            const messageArr = dataObj.message as Array<{ message: string }>;
-
-            if (messageArr[0].message === "Email already exists.") {
-              errorMessage =
-                "Email này đã được đăng ký trước đó bằng mật khẩu. Vui lòng đăng nhập bằng email và mật khẩu thay vì Google.";
-            } else {
-              errorMessage = messageArr[0].message;
-            }
-          } else if (
-            "message" in dataObj &&
-            typeof dataObj.message === "string"
-          ) {
-            errorMessage = dataObj.message as string;
-          }
-        }
-      }
-    }
-
-    const formattedErrorMessage = handleResponseMessage(errorMessage);
-    thunkAPI.dispatch(setMessageError(formattedErrorMessage));
-    return thunkAPI.rejectWithValue(
-      formattedErrorMessage
-    ) as unknown as UserAuth;
-  }
-};

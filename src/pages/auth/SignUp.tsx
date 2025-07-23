@@ -1,75 +1,91 @@
 import React from "react";
-import { Box, Paper, Typography } from "@mui/material";
-import { motion } from "framer-motion";
+import { Box, Paper, Typography, Link } from "@mui/material";
 import LockOutlinedIcon from "@mui/icons-material/LockOutlined";
-import reactLogo from "../../assets/react.svg";
+import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import { RegisterForm } from "../../sections/auth";
+import LoginBackground from "../../components/LoginBackground";
+import { Link as RouterLink } from "react-router-dom";
 
 const SignUp: React.FC = () => {
   return (
     <Box
       sx={{
-        display: "flex",
-        justifyContent: "center",
-        alignItems: "center",
         minHeight: "100vh",
-        backgroundColor: "#F6FEFC",
-        p: { xs: 2, sm: 3 },
+        background: "linear-gradient(180deg, #FAFAFA 0%, #F0F0F0 100%)",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        position: "relative",
+        p: 0,
+        overflow: "hidden",
+        maxWidth: "100%",
+        margin: "0 auto",
       }}
     >
-      <Paper
-        component={motion.div}
-        initial={{ opacity: 0, scale: 0.95 }}
-        animate={{ opacity: 1, scale: 1 }}
-        transition={{ duration: 0.6 }}
-        elevation={4}
+      {/* Hiệu ứng nền */}
+      <LoginBackground />
+
+      {/* Thanh điều hướng về trang chủ */}
+      <Box
         sx={{
-          width: "100%",
-          maxWidth: 500,
-          borderRadius: 3,
-          overflow: "hidden",
+          position: "absolute",
+          top: 30,
+          left: 30,
+          zIndex: 10,
+        }}
+      >
+        <Link
+          component={RouterLink}
+          to="/"
+          sx={{
+            display: "flex",
+            alignItems: "center",
+            color: "#2C2C2C",
+            textDecoration: "none",
+            fontWeight: 500,
+            "&:hover": {
+              textDecoration: "underline",
+              color: "#1A1A1A",
+            },
+          }}
+        >
+          <ArrowBackIcon sx={{ mr: 1, fontSize: "0.9rem", color: "#2C2C2C" }} />
+          Về trang chủ
+        </Link>
+      </Box>
+
+      {/* Form SignUp */}
+      <Paper
+        elevation={1}
+        sx={{
           display: "flex",
           flexDirection: "column",
+          alignItems: "stretch",
+          borderRadius: "16px",
+          overflow: "hidden",
+          maxWidth: { xs: 360, sm: 400, md: 420 },
+          width: "100%",
+          mx: { xs: 2, sm: 4, md: 0 },
+          my: 4,
+          boxShadow: "0px 8px 24px 0px rgba(44, 44, 44, 0.08)",
+          border: "1px solid #E8DDD0",
+          backdropFilter: "blur(8px)",
+          backgroundColor: "rgba(255, 255, 255, 0.95)",
+          zIndex: 2,
+          position: "relative",
         }}
       >
         <Box
           sx={{
             width: "100%",
             p: { xs: 3, sm: 3.5, md: 4 },
-            background:
-              "linear-gradient(180deg, rgba(238, 255, 251, 0.7) 0%, rgba(244, 254, 252, 0.7) 100%)",
+            background: "linear-gradient(180deg, #FAFAFA 0%, #F8F8F8 100%)",
           }}
         >
-          <Box sx={{ display: "flex", alignItems: "center", mb: 3 }}>
-            <Box
-              component="img"
-              src={reactLogo}
-              alt="Logo"
-              sx={{
-                width: 28,
-                height: 28,
-                borderRadius: 1,
-                mr: 1,
-                background:
-                  "linear-gradient(180deg, rgba(238, 255, 251, 0.55) 0%, #FDD9FF 54.17%, #C1E7FF 100%)",
-              }}
-            />
-            <Typography
-              variant="h5"
-              fontWeight={400}
-              letterSpacing="-0.02em"
-              fontSize={26}
-              lineHeight="1.4em"
-              color="#000000"
-            >
-              Tell Me
-            </Typography>
-          </Box>
-
           <Box sx={{ mb: 3 }}>
             <Typography
               variant="h6"
-              fontWeight={500}
+              fontWeight={700}
               fontSize={20}
               lineHeight="1.5em"
               sx={{
@@ -77,12 +93,13 @@ const SignUp: React.FC = () => {
                 mb: 2,
                 display: "flex",
                 alignItems: "center",
+                color: "#2C2C2C",
               }}
             >
               SIGN UP{" "}
               <LockOutlinedIcon
                 fontSize="small"
-                sx={{ ml: 0.5, fontSize: "0.9rem" }}
+                sx={{ ml: 0.5, fontSize: "0.9rem", color: "#2C2C2C" }}
               />
             </Typography>
           </Box>

@@ -20,7 +20,6 @@ import {
   IconButton,
   Tooltip,
   Card,
-  CardContent,
   CircularProgress,
 } from "@mui/material";
 import {
@@ -83,10 +82,8 @@ const ProjectsTable: React.FC<ProjectsTableProps> = ({
       ).unwrap();
 
       // Success message already shown by toast in slice
-      console.log("✅ Successfully applied to project:", projectId);
-    } catch (error) {
+    } catch {
       // Error message already shown by toast in slice
-      console.error("❌ Failed to apply to project:", error);
     } finally {
       setJoiningProjectId(null);
     }
@@ -106,7 +103,9 @@ const ProjectsTable: React.FC<ProjectsTableProps> = ({
     return text.substring(0, maxLength) + "...";
   };
 
-  const getStatusColor = (status: string) => {
+  const getStatusColor = (
+    status: string
+  ): "default" | "primary" | "secondary" | "error" | "info" | "success" | "warning" => {
     switch (status?.toLowerCase()) {
       case "active":
       case "đang hoạt động":
@@ -440,7 +439,7 @@ const ProjectsTable: React.FC<ProjectsTableProps> = ({
                         fontWeight: 700,
                       }}
                     >
-                      {project.memberCount || 1}
+                      {project.members?.length || 1}
                     </Typography>
                   </Box>
                 </TableCell>
@@ -448,7 +447,7 @@ const ProjectsTable: React.FC<ProjectsTableProps> = ({
                 <TableCell align="center" sx={{ py: 3 }}>
                   <Chip
                     label={getStatusText(project.status || "active")}
-                    color={getStatusColor(project.status || "active") as any}
+                    color={getStatusColor(project.status || "active")}
                     size="medium"
                     sx={{
                       fontWeight: 600,

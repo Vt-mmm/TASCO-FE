@@ -77,23 +77,28 @@ const workAreasSlice = createSlice({
         toWorkAreaId: string;
       }>
     ) => {
-      const { projectId, taskId, fromWorkAreaId, toWorkAreaId } = action.payload;
+      const { projectId, taskId, fromWorkAreaId, toWorkAreaId } =
+        action.payload;
       const projectWorkAreas = state.workAreasByProject[projectId];
-      
+
       if (!projectWorkAreas) return;
 
       // Find the task in the source work area
-      const fromWorkArea = projectWorkAreas.find(wa => wa.id === fromWorkAreaId);
-      const toWorkArea = projectWorkAreas.find(wa => wa.id === toWorkAreaId);
+      const fromWorkArea = projectWorkAreas.find(
+        (wa) => wa.id === fromWorkAreaId
+      );
+      const toWorkArea = projectWorkAreas.find((wa) => wa.id === toWorkAreaId);
 
       if (!fromWorkArea || !toWorkArea || !fromWorkArea.workTasks) return;
 
-      const taskIndex = fromWorkArea.workTasks.findIndex(task => task.id === taskId);
+      const taskIndex = fromWorkArea.workTasks.findIndex(
+        (task) => task.id === taskId
+      );
       if (taskIndex === -1) return;
 
       // Remove task from source work area
       const task = fromWorkArea.workTasks.splice(taskIndex, 1)[0];
-      
+
       // Add task to destination work area
       if (!toWorkArea.workTasks) {
         toWorkArea.workTasks = [];
@@ -101,13 +106,26 @@ const workAreasSlice = createSlice({
       toWorkArea.workTasks.push(task);
 
       // Also update the general workAreas array
-      const generalFromWorkArea = state.workAreas.find(wa => wa.id === fromWorkAreaId);
-      const generalToWorkArea = state.workAreas.find(wa => wa.id === toWorkAreaId);
-      
-      if (generalFromWorkArea && generalToWorkArea && generalFromWorkArea.workTasks) {
-        const generalTaskIndex = generalFromWorkArea.workTasks.findIndex(task => task.id === taskId);
+      const generalFromWorkArea = state.workAreas.find(
+        (wa) => wa.id === fromWorkAreaId
+      );
+      const generalToWorkArea = state.workAreas.find(
+        (wa) => wa.id === toWorkAreaId
+      );
+
+      if (
+        generalFromWorkArea &&
+        generalToWorkArea &&
+        generalFromWorkArea.workTasks
+      ) {
+        const generalTaskIndex = generalFromWorkArea.workTasks.findIndex(
+          (task) => task.id === taskId
+        );
         if (generalTaskIndex !== -1) {
-          const generalTask = generalFromWorkArea.workTasks.splice(generalTaskIndex, 1)[0];
+          const generalTask = generalFromWorkArea.workTasks.splice(
+            generalTaskIndex,
+            1
+          )[0];
           if (!generalToWorkArea.workTasks) {
             generalToWorkArea.workTasks = [];
           }
@@ -121,7 +139,7 @@ const workAreasSlice = createSlice({
     // Get WorkAreas by Project
     builder
       .addCase(getWorkAreasByProjectThunk.pending, (state, action) => {
-        state.isLoadingByProject[action.meta.arg] = true;
+        state.isLoadingByProject[action.meta.arg.projectId] = true;
         state.error = null;
       })
       .addCase(getWorkAreasByProjectThunk.fulfilled, (state, action) => {
@@ -131,7 +149,7 @@ const workAreasSlice = createSlice({
         state.workAreas = workAreas as WorkArea[];
       })
       .addCase(getWorkAreasByProjectThunk.rejected, (state, action) => {
-        const projectId = action.meta.arg;
+        const projectId = action.meta.arg.projectId;
         state.isLoadingByProject[projectId] = false;
         state.error = action.payload as string;
         // toast.error(state.error); // Temporarily disabled to prevent re-render loops

@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React from "react";
 import {
   Box,
   Typography,
@@ -23,10 +23,7 @@ import {
   ProjectRequest,
 } from "../../../common/models/project";
 import { WorkArea } from "../../../common/models/workArea";
-import {
-  getApprovedMembers,
-  getActiveMembers,
-} from "../../../utils/projectUtils";
+import { getApprovedMembers } from "../../../utils/projectUtils";
 
 interface Props {
   project: Project;

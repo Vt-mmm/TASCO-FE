@@ -5,6 +5,7 @@ import {
   Box,
   TextField,
   InputAdornment,
+  Alert,
 } from "@mui/material";
 import { Search } from "@mui/icons-material";
 import { useAppDispatch, useAppSelector } from "../../redux/configStore";
@@ -21,6 +22,10 @@ const ExploreProjectsPage: React.FC = () => {
   const dispatch = useAppDispatch();
   const { projects, totalCount, pageCount, currentPage, pageSize, isLoading } =
     useAppSelector((state) => state.projects);
+
+  // Get current user info to filter out owned projects
+  const { userAuth } = useAppSelector((state) => state.auth);
+  const currentUserId = userAuth?.userId;
 
   const [searchTerm, setSearchTerm] = useState("");
   const searchTimeoutRef = useRef<number | null>(null);
@@ -93,6 +98,29 @@ const ExploreProjectsPage: React.FC = () => {
     );
   };
 
+  // Filter out projects where current user is the owner OR already a member
+  const filteredProjects = projects.filter((project) => {
+    // If no currentUserId, show all projects (user not logged in)
+    if (!currentUserId) return true;
+
+    // Filter out projects where user is owner
+    if (project.ownerId === currentUserId) return false;
+
+    // Filter out projects where user is already a member (approved)
+    const isAlreadyMember = project.members?.some(
+      (member) =>
+        member.userId === currentUserId &&
+        (member.status === "approved" ||
+          member.status === "APPROVED" ||
+          member.approvedStatus === "approved" ||
+          member.approvedStatus === "APPROVED")
+    );
+
+    if (isAlreadyMember) return false;
+
+    return true;
+  });
+
   return (
     <Box
       sx={{
@@ -125,6 +153,28 @@ const ExploreProjectsPage: React.FC = () => {
           </Typography>
         </Box>
 
+        {/* Info Alert - Only show to logged in users */}
+        {currentUserId && (
+          <Alert
+            severity="info"
+            sx={{
+              mb: 3,
+              borderRadius: 2,
+              backgroundColor: "#E3F2FD",
+              border: "1px solid #BBDEFB",
+              "& .MuiAlert-icon": {
+                color: "#1976D2",
+              },
+            }}
+          >
+            <Typography variant="body2">
+              💡 <strong>Lưu ý:</strong> Bạn chỉ thấy các dự án mà bạn chưa tham
+              gia ở đây. Để quản lý dự án của riêng mình hoặc các dự án đã tham
+              gia, hãy truy cập <strong>"My Projects"</strong> trong dashboard.
+            </Typography>
+          </Alert>
+        )}
+
         {/* Search Bar */}
         <Box sx={{ mb: 3 }}>
           <TextField
@@ -152,7 +202,7 @@ const ExploreProjectsPage: React.FC = () => {
 
         {/* Projects Table */}
         <ProjectsTable
-          projects={projects}
+          projects={filteredProjects}
           totalCount={totalCount}
           pageCount={pageCount}
           currentPage={currentPage}

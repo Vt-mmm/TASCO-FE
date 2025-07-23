@@ -163,14 +163,18 @@ const Dashboard: React.FC = () => {
     if (!selectedProject) return;
 
     try {
-      await dispatch(
+      const result = await dispatch(
         updateProjectThunk({
           projectId: selectedProject.id,
           projectData,
         })
       ).unwrap();
-      // Refresh current page to get updated data
-      loadProjects(currentPage, searchTerm);
+
+      // If we got a valid result, Redux will handle the update automatically
+      // If not, we might need to refresh the data
+      if (!result || !result.id) {
+        loadProjects(currentPage, searchTerm);
+      }
     } catch (error) {
       console.error("❌ Failed to update project:", error);
     }
@@ -181,8 +185,8 @@ const Dashboard: React.FC = () => {
 
     try {
       await dispatch(deleteProjectThunk(selectedProject.id)).unwrap();
-      // Refresh current page after deletion
-      loadProjects(currentPage, searchTerm);
+      // Redux state will be automatically updated by deleteProjectThunk.fulfilled
+      // No need to refresh manually
     } catch (error) {
       console.error("❌ Failed to delete project:", error);
     }

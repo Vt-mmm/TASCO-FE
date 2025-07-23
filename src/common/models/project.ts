@@ -33,9 +33,11 @@ export interface ProjectMember {
     | "pending"
     | "approved"
     | "rejected"
+    | "removed"
     | "APPROVED"
     | "PENDING"
-    | "REJECTED";
+    | "REJECTED"
+    | "REMOVED";
   approvedUpdateDate?: string;
   isRemoved?: boolean;
   removeDate?: string;
@@ -46,9 +48,11 @@ export interface ProjectMember {
     | "pending"
     | "approved"
     | "rejected"
+    | "removed"
     | "APPROVED"
     | "PENDING"
-    | "REJECTED";
+    | "REJECTED"
+    | "REMOVED";
 }
 
 export interface CreateProjectRequest {

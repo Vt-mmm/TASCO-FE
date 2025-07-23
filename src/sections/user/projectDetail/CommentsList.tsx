@@ -5,7 +5,6 @@ import {
   Divider,
   Alert,
   Skeleton,
-  Fade,
   Chip,
   Pagination,
 } from "@mui/material";
@@ -42,7 +41,6 @@ const CommentsList: React.FC<CommentsListProps> = ({ taskId, taskName }) => {
     isUpdating,
     isDeleting,
     error,
-    successMessage,
     totalCount,
     pageCount,
     currentPage,
@@ -316,21 +314,6 @@ const CommentsList: React.FC<CommentsListProps> = ({ taskId, taskName }) => {
         >
           {error}
         </Alert>
-      )}
-
-      {/* Success Message */}
-      {successMessage && (
-        <Fade in={!!successMessage}>
-          <Alert
-            severity="success"
-            sx={{ mb: 2 }}
-            onClose={() => {
-              // Optionally clear success message
-            }}
-          >
-            {successMessage}
-          </Alert>
-        </Fade>
       )}
 
       {/* Comments List */}

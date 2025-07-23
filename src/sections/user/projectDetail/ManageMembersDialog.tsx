@@ -19,6 +19,7 @@ import {
   getUserDisplayName,
   isCurrentUser as checkIsCurrentUser,
 } from "../../../utils/userService";
+import RemoveMemberConfirmDialog from "./RemoveMemberConfirmDialog";
 
 interface Props {
   open: boolean;
@@ -27,6 +28,7 @@ interface Props {
   pendingMembers: ProjectMember[];
   currentUserId: string;
   onRemoveMember: (memberId: string) => Promise<void>;
+  isRemovingMember?: boolean;
 }
 
 const ManageMembersDialog: React.FC<Props> = ({
@@ -36,6 +38,7 @@ const ManageMembersDialog: React.FC<Props> = ({
   pendingMembers,
   currentUserId,
   onRemoveMember,
+  isRemovingMember = false,
 }) => {
   const [memberDisplayNames, setMemberDisplayNames] = useState<
     Map<string, string>
@@ -44,9 +47,26 @@ const ManageMembersDialog: React.FC<Props> = ({
     Map<string, boolean>
   >(new Map());
 
+  // Confirmation dialog state
+  const [confirmDialogOpen, setConfirmDialogOpen] = useState(false);
+  const [memberToRemove, setMemberToRemove] = useState<{
+    id: string;
+    name: string;
+  } | null>(null);
+
+  // Debug: Log when members prop changes
+  useEffect(() => {
+    // Members prop changed - component will re-render automatically
+  }, [members]);
+
   useEffect(() => {
     const loadUserDisplayNames = async () => {
-      if (!open) return;
+      if (!open) {
+        // Clear display names when dialog is closed to prevent stale data
+        setMemberDisplayNames(new Map());
+        setCurrentUserFlags(new Map());
+        return;
+      }
 
       const allMembers = [...members, ...pendingMembers];
       const displayNames = new Map<string, string>();
@@ -92,6 +112,35 @@ const ManageMembersDialog: React.FC<Props> = ({
     // Không thể xóa chính mình
     if (member.userId === currentUserId) return false;
     return true;
+  };
+
+  const handleRemoveClick = (member: ProjectMember) => {
+    const memberName =
+      memberDisplayNames.get(member.userId) || member.userName || member.userId;
+
+    // Use member.id if available, otherwise use member.userId
+    // But we need to make sure we're consistent with what the API expects
+    const memberIdToRemove = member.id || member.userId;
+
+    setMemberToRemove({
+      id: memberIdToRemove,
+      name: memberName,
+    });
+    setConfirmDialogOpen(true);
+  };
+
+  const handleConfirmRemove = async () => {
+    if (memberToRemove) {
+      await onRemoveMember(memberToRemove.id);
+
+      setConfirmDialogOpen(false);
+      setMemberToRemove(null);
+    }
+  };
+
+  const handleCancelRemove = () => {
+    setConfirmDialogOpen(false);
+    setMemberToRemove(null);
   };
 
   return (
@@ -199,7 +248,8 @@ const ManageMembersDialog: React.FC<Props> = ({
                     variant="outlined"
                     color="error"
                     startIcon={<PersonRemove />}
-                    onClick={() => onRemoveMember(member.id || member.userId)}
+                    onClick={() => handleRemoveClick(member)}
+                    disabled={isRemovingMember}
                     sx={{
                       minWidth: "auto",
                       px: 2,
@@ -207,68 +257,9 @@ const ManageMembersDialog: React.FC<Props> = ({
                       fontSize: "0.8rem",
                     }}
                   >
-                    Remove
+                    {isRemovingMember ? "Đang loại..." : "Loại khỏi dự án"}
                   </Button>
                 )}
-              </ListItem>
-            ))}
-          </List>
-        )}
-
-        {/* Pending Approval Section */}
-        <Typography
-          variant="h6"
-          sx={{ mb: 2, color: "#f57c00", fontWeight: 600 }}
-        >
-          Pending Approval ({pendingMembers.length})
-        </Typography>
-
-        {pendingMembers.length === 0 ? (
-          <Box
-            sx={{
-              py: 2,
-              textAlign: "center",
-              color: "#999999",
-            }}
-          >
-            <Typography variant="body2">No pending members</Typography>
-          </Box>
-        ) : (
-          <List sx={{ py: 0, mb: 2 }}>
-            {pendingMembers.map((member) => (
-              <ListItem
-                key={member.id || member.userId}
-                sx={{
-                  border: "1px solid rgba(245, 124, 0, 0.2)",
-                  borderRadius: 2,
-                  mb: 1,
-                  backgroundColor: "rgba(245, 124, 0, 0.05)",
-                  "&:last-child": { mb: 0 },
-                }}
-              >
-                <ListItemText
-                  primary={
-                    <Typography variant="body1" fontWeight={500}>
-                      {memberDisplayNames.get(member.userId) || "Loading..."}
-                    </Typography>
-                  }
-                  secondary={
-                    <Box display="flex" alignItems="center" gap={1} mt={0.5}>
-                      <Chip
-                        label="Pending"
-                        size="small"
-                        color="warning"
-                        sx={{ fontWeight: 500 }}
-                      />
-                      <Typography variant="caption" color="#999999">
-                        Applied{" "}
-                        {member.appliedAt
-                          ? new Date(member.appliedAt).toLocaleDateString()
-                          : "Unknown date"}
-                      </Typography>
-                    </Box>
-                  }
-                />
               </ListItem>
             ))}
           </List>
@@ -300,6 +291,15 @@ const ManageMembersDialog: React.FC<Props> = ({
           Close
         </Button>
       </DialogActions>
+
+      {/* Remove Member Confirmation Dialog */}
+      <RemoveMemberConfirmDialog
+        open={confirmDialogOpen}
+        memberName={memberToRemove?.name || ""}
+        onConfirm={handleConfirmRemove}
+        onCancel={handleCancelRemove}
+        isRemoving={isRemovingMember}
+      />
     </Dialog>
   );
 };

@@ -11,6 +11,7 @@ import {
   approveJoinRequestThunk,
   rejectJoinRequestThunk,
   joinProjectThunk,
+  removeMemberThunk,
 } from "./projectsThunks";
 
 export interface ProjectsState {
@@ -22,6 +23,7 @@ export interface ProjectsState {
   isDeleting: boolean;
   isManagingRequests: boolean;
   isJoining: boolean;
+  isRemovingMember: boolean;
   error: string | null;
   successMessage: string | null;
   // Pagination fields
@@ -40,6 +42,7 @@ const initialState: ProjectsState = {
   isDeleting: false,
   isManagingRequests: false,
   isJoining: false,
+  isRemovingMember: false,
   error: null,
   successMessage: null,
   // Initialize pagination
@@ -90,7 +93,12 @@ const projectsSlice = createSlice({
 
         // Handle pagination response
         if (action.payload && typeof action.payload === "object") {
-          const payload = action.payload as any;
+          const payload = action.payload as {
+            projects?: Project[];
+            totalCount?: number;
+            pageCount?: number;
+            currentPage?: number;
+          };
 
           // Check if payload has pagination structure
           if (Array.isArray(payload.projects)) {
@@ -105,9 +113,9 @@ const projectsSlice = createSlice({
             }
           }
           // Fallback: if payload is directly an array
-          else if (Array.isArray(payload)) {
-            state.projects = payload;
-            state.totalCount = payload.length;
+          else if (Array.isArray(action.payload)) {
+            state.projects = action.payload as Project[];
+            state.totalCount = action.payload.length;
             state.pageCount = Math.ceil(state.totalCount / state.pageSize);
           }
           // Default case
@@ -139,7 +147,12 @@ const projectsSlice = createSlice({
 
         // Handle pagination response (same logic as getExploreProjectsThunk)
         if (action.payload && typeof action.payload === "object") {
-          const payload = action.payload as any;
+          const payload = action.payload as {
+            projects?: Project[];
+            totalCount?: number;
+            pageCount?: number;
+            currentPage?: number;
+          };
 
           if (Array.isArray(payload.projects)) {
             state.projects = payload.projects;
@@ -150,9 +163,9 @@ const projectsSlice = createSlice({
             if (payload.currentPage) {
               state.currentPage = payload.currentPage;
             }
-          } else if (Array.isArray(payload)) {
-            state.projects = payload;
-            state.totalCount = payload.length;
+          } else if (Array.isArray(action.payload)) {
+            state.projects = action.payload as Project[];
+            state.totalCount = action.payload.length;
             state.pageCount = Math.ceil(state.totalCount / state.pageSize);
           } else {
             state.projects = [];
@@ -213,6 +226,14 @@ const projectsSlice = createSlice({
       })
       .addCase(updateProjectThunk.fulfilled, (state, action) => {
         state.isUpdating = false;
+
+        // Check if payload exists and has required properties
+        if (!action.payload || !action.payload.id) {
+          state.error = "Invalid response from server";
+          toast.error("Failed to update project - invalid response");
+          return;
+        }
+
         const index = state.projects.findIndex(
           (p) => p.id === action.payload.id
         );
@@ -320,12 +341,64 @@ const projectsSlice = createSlice({
       })
       .addCase(joinProjectThunk.fulfilled, (state, action) => {
         state.isJoining = false;
-        const { projectId, message } = action.payload;
+        const { message } = action.payload;
         state.successMessage = message || "Successfully applied to project";
         toast.success(state.successMessage);
       })
       .addCase(joinProjectThunk.rejected, (state, action) => {
         state.isJoining = false;
+        state.error = action.payload as string;
+        toast.error(state.error);
+      })
+
+      // Remove member
+      .addCase(removeMemberThunk.pending, (state) => {
+        state.isRemovingMember = true;
+        state.error = null;
+      })
+      .addCase(removeMemberThunk.fulfilled, (state, action) => {
+        state.isRemovingMember = false;
+        const { memberId, message } = action.payload;
+
+        // Remove member from currentProject if it exists
+        if (state.currentProject && state.currentProject.members) {
+          // Instead of removing from array, mark member as REMOVED
+          // This matches the backend behavior
+          const memberFound = state.currentProject.members.find((member) => {
+            const memberIdStr = member.id?.toString() || "";
+            const memberUserIdStr = member.userId?.toString() || "";
+            const targetIdStr = memberId?.toString() || "";
+
+            return (
+              memberIdStr === targetIdStr ||
+              memberUserIdStr === targetIdStr ||
+              member.id === memberId ||
+              member.userId === memberId
+            );
+          });
+
+          if (memberFound) {
+            // Mark as removed instead of removing from array
+            memberFound.approvedStatus = "REMOVED";
+            memberFound.isRemoved = true;
+            memberFound.removeDate = new Date().toISOString();
+
+            // Now filter out removed members from the display
+            state.currentProject.members = state.currentProject.members.filter(
+              (member) =>
+                !member.isRemoved &&
+                member.approvedStatus !== "REMOVED" &&
+                member.approvedStatus !== "removed"
+            );
+          }
+        }
+
+        state.successMessage =
+          message || "Đã loại thành viên khỏi dự án thành công";
+        toast.success(state.successMessage);
+      })
+      .addCase(removeMemberThunk.rejected, (state, action) => {
+        state.isRemovingMember = false;
         state.error = action.payload as string;
         toast.error(state.error);
       });

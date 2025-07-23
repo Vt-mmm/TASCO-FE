@@ -1,6 +1,7 @@
 import { createAsyncThunk } from "@reduxjs/toolkit";
 import { axiosClient } from "../../axiosClient/axiosClient";
 import { ROUTES_API_PROJECTS } from "../../constants/routesApiKeys";
+import { VieMessageConstant } from "../../constants/VieMessageConstant";
 import {
   Project,
   CreateProjectRequest,
@@ -10,6 +11,32 @@ import {
 import { ApiResponse } from "../../common/models/common";
 import { AxiosError } from "axios";
 import { ROUTES_API_PROJECT_MEMBERS } from "../../constants/routesApiKeys";
+
+// Interface for project API response
+interface ProjectApiResponse {
+  success?: boolean;
+  data?:
+    | {
+        projects?: Project[];
+        totalCount?: number;
+        pageCount?: number;
+        currentPage?: number;
+      }
+    | Project[];
+  projects?: Project[];
+  totalCount?: number;
+  pageCount?: number;
+  currentPage?: number;
+}
+
+// Interface for Redux state
+interface RootState {
+  auth?: {
+    userAuth?: {
+      userId?: string;
+    };
+  };
+}
 
 // Helper function cho API calls với retry
 async function callApiWithRetry<T>(
@@ -56,7 +83,7 @@ export const getMyProjectsThunk = createAsyncThunk(
         isDelete = false,
       } = params;
 
-      // Build query parameters for my-project endpoint
+      // Build query parameters
       const queryParams = new URLSearchParams({
         role: role,
         pageSize: pageSize.toString(),
@@ -67,7 +94,7 @@ export const getMyProjectsThunk = createAsyncThunk(
 
       const axiosResp = await callApiWithRetry(() =>
         axiosClient.get(
-          `${ROUTES_API_PROJECTS.GET_ALL}/my-project?${queryParams.toString()}`
+          `${ROUTES_API_PROJECTS.GET_ALL}?${queryParams.toString()}`
         )
       );
 
@@ -81,7 +108,7 @@ export const getMyProjectsThunk = createAsyncThunk(
 
       // Handle pagination response (same logic as getAllProjectsThunk)
       if (rawPayload && typeof rawPayload === "object") {
-        const payload = rawPayload as any;
+        const payload = rawPayload as ProjectApiResponse;
 
         // If it's directly an array
         if (Array.isArray(rawPayload)) {
@@ -90,24 +117,49 @@ export const getMyProjectsThunk = createAsyncThunk(
         }
         // Check if it's a success response with data field
         else if (payload.success && payload.data) {
-          if (Array.isArray(payload.data.projects)) {
-            projectsData = payload.data.projects;
-            totalCount = payload.data.totalCount || 0;
-            pageCount =
-              payload.data.pageCount || Math.ceil(totalCount / pageSize);
-            currentPage = payload.data.currentPage || pageNumber;
-          } else if (Array.isArray(payload.data)) {
+          if (Array.isArray(payload.data)) {
             projectsData = payload.data;
             // Don't paginate here - we'll filter first then paginate
+          } else if (
+            payload.data &&
+            typeof payload.data === "object" &&
+            "projects" in payload.data
+          ) {
+            const dataWithProjects = payload.data as {
+              projects?: Project[];
+              totalCount?: number;
+              pageCount?: number;
+              currentPage?: number;
+            };
+            if (Array.isArray(dataWithProjects.projects)) {
+              projectsData = dataWithProjects.projects;
+              totalCount = dataWithProjects.totalCount || 0;
+              pageCount =
+                dataWithProjects.pageCount || Math.ceil(totalCount / pageSize);
+              currentPage = dataWithProjects.currentPage || pageNumber;
+            }
           }
         }
         // Other response format handling...
-        else if (payload.data && Array.isArray(payload.data.projects)) {
-          projectsData = payload.data.projects;
-          totalCount = payload.data.totalCount || payload.data.projects.length;
-          pageCount =
-            payload.data.pageCount || Math.ceil(totalCount / pageSize);
-          currentPage = payload.data.currentPage || pageNumber;
+        else if (
+          payload.data &&
+          typeof payload.data === "object" &&
+          "projects" in payload.data
+        ) {
+          const dataWithProjects = payload.data as {
+            projects?: Project[];
+            totalCount?: number;
+            pageCount?: number;
+            currentPage?: number;
+          };
+          if (Array.isArray(dataWithProjects.projects)) {
+            projectsData = dataWithProjects.projects;
+            totalCount =
+              dataWithProjects.totalCount || dataWithProjects.projects.length;
+            pageCount =
+              dataWithProjects.pageCount || Math.ceil(totalCount / pageSize);
+            currentPage = dataWithProjects.currentPage || pageNumber;
+          }
         } else if (payload.data && Array.isArray(payload.data)) {
           projectsData = payload.data as Project[];
           // Don't paginate here - we'll filter first then paginate
@@ -120,14 +172,14 @@ export const getMyProjectsThunk = createAsyncThunk(
       }
 
       // Filter projects FIRST before pagination to only include those where current user has approved membership
-      const state = getState() as any;
+      const state = getState() as RootState;
       const currentUserId = state.auth?.userAuth?.userId;
 
       if (currentUserId && projectsData.length > 0) {
         projectsData = projectsData.filter((project) => {
           // First check if user is the project owner
           const isProjectOwner = project.ownerId === currentUserId;
-          
+
           if (isProjectOwner) {
             return true; // Project owner always has access
           }
@@ -150,8 +202,7 @@ export const getMyProjectsThunk = createAsyncThunk(
 
           // Check if membership is approved
           const isApprovedStatus =
-            approvedStatus === "approved" || 
-            approvedStatus === "APPROVED";
+            approvedStatus === "approved" || approvedStatus === "APPROVED";
 
           return isApprovedStatus;
         });
@@ -183,7 +234,6 @@ export const getMyProjectsThunk = createAsyncThunk(
         currentPage,
       };
     } catch (error) {
-      console.error("❌ getMyProjectsThunk error:", error);
       const err = error as AxiosError<{ message: string }>;
       return rejectWithValue(
         err.response?.data?.message || "Failed to fetch my projects"
@@ -237,7 +287,7 @@ export const getExploreProjectsThunk = createAsyncThunk(
 
       // Handle different response structures from backend
       if (rawPayload && typeof rawPayload === "object") {
-        const payload = rawPayload as any;
+        const payload = rawPayload as ProjectApiResponse;
 
         // If it's directly an array (backend doesn't support pagination yet)
         if (Array.isArray(rawPayload)) {
@@ -252,26 +302,51 @@ export const getExploreProjectsThunk = createAsyncThunk(
         }
         // Check if it's a success response with data field
         else if (payload.success && payload.data) {
-          if (Array.isArray(payload.data.projects)) {
-            projectsData = payload.data.projects;
-            totalCount = payload.data.totalCount || 0;
-            pageCount =
-              payload.data.pageCount || Math.ceil(totalCount / pageSize);
-            currentPage = payload.data.currentPage || pageNumber;
-          } else if (Array.isArray(payload.data)) {
+          if (Array.isArray(payload.data)) {
             // data is direct array
             projectsData = payload.data;
             totalCount = projectsData.length;
             pageCount = Math.ceil(totalCount / pageSize);
+          } else if (
+            payload.data &&
+            typeof payload.data === "object" &&
+            "projects" in payload.data
+          ) {
+            const dataWithProjects = payload.data as {
+              projects?: Project[];
+              totalCount?: number;
+              pageCount?: number;
+              currentPage?: number;
+            };
+            if (Array.isArray(dataWithProjects.projects)) {
+              projectsData = dataWithProjects.projects;
+              totalCount = dataWithProjects.totalCount || 0;
+              pageCount =
+                dataWithProjects.pageCount || Math.ceil(totalCount / pageSize);
+              currentPage = dataWithProjects.currentPage || pageNumber;
+            }
           }
         }
         // Check if data field contains projects directly
-        else if (payload.data && Array.isArray(payload.data.projects)) {
-          projectsData = payload.data.projects;
-          totalCount = payload.data.totalCount || payload.data.projects.length;
-          pageCount =
-            payload.data.pageCount || Math.ceil(totalCount / pageSize);
-          currentPage = payload.data.currentPage || pageNumber;
+        else if (
+          payload.data &&
+          typeof payload.data === "object" &&
+          "projects" in payload.data
+        ) {
+          const dataWithProjects = payload.data as {
+            projects?: Project[];
+            totalCount?: number;
+            pageCount?: number;
+            currentPage?: number;
+          };
+          if (Array.isArray(dataWithProjects.projects)) {
+            projectsData = dataWithProjects.projects;
+            totalCount =
+              dataWithProjects.totalCount || dataWithProjects.projects.length;
+            pageCount =
+              dataWithProjects.pageCount || Math.ceil(totalCount / pageSize);
+            currentPage = dataWithProjects.currentPage || pageNumber;
+          }
         }
         // Check if data field is direct array
         else if (payload.data && Array.isArray(payload.data)) {
@@ -308,7 +383,6 @@ export const getExploreProjectsThunk = createAsyncThunk(
         currentPage,
       };
     } catch (error) {
-      console.error("❌ getAllProjectsThunk error:", error);
       const err = error as AxiosError<{ message: string }>;
       return rejectWithValue(
         err.response?.data?.message || "Failed to fetch projects"
@@ -320,11 +394,22 @@ export const getExploreProjectsThunk = createAsyncThunk(
 // Get project by ID
 export const getProjectByIdThunk = createAsyncThunk(
   "projects/getById",
-  async (projectId: string, { rejectWithValue }) => {
+  async (
+    params: string | { projectId: string; forceRefresh?: boolean },
+    { rejectWithValue }
+  ) => {
     try {
-      const response = await callApiWithRetry(() =>
-        axiosClient.get(ROUTES_API_PROJECTS.GET_BY_ID(projectId))
-      );
+      // Handle both string and object parameters for backward compatibility
+      const projectId = typeof params === "string" ? params : params.projectId;
+      const forceRefresh =
+        typeof params === "string" ? false : params.forceRefresh || false;
+
+      // Add cache busting parameter if force refresh
+      const url = forceRefresh
+        ? `${ROUTES_API_PROJECTS.GET_BY_ID(projectId)}?_t=${Date.now()}`
+        : ROUTES_API_PROJECTS.GET_BY_ID(projectId);
+
+      const response = await callApiWithRetry(() => axiosClient.get(url));
 
       // callApiWithRetry may return either raw data or axios response
       let projectData: Project;
@@ -349,6 +434,17 @@ export const getProjectByIdThunk = createAsyncThunk(
       // Validate that we have required fields
       if (!projectData || !projectData.id) {
         throw new Error("Invalid project data received");
+      }
+
+      // Filter out removed members
+      if (projectData.members) {
+        // Filter out members that are marked as removed or have REMOVED status
+        projectData.members = projectData.members.filter(
+          (member) =>
+            !member.isRemoved &&
+            member.approvedStatus !== "REMOVED" &&
+            member.approvedStatus !== "removed"
+        );
       }
 
       return projectData;
@@ -408,7 +504,7 @@ export const updateProjectThunk = createAsyncThunk(
       projectId,
       projectData,
     }: { projectId: string; projectData: UpdateProjectRequest },
-    { rejectWithValue }
+    { rejectWithValue, getState }
   ) => {
     try {
       const response = await callApiWithRetry(() =>
@@ -417,7 +513,37 @@ export const updateProjectThunk = createAsyncThunk(
           projectData
         )
       );
-      return response.data.data;
+
+      // If API returns boolean true instead of project object
+      if (typeof response.data === "boolean" && response.data === true) {
+        // Get current project from state to preserve other fields
+        const state = getState() as { projects: { projects: Project[] } };
+        const currentProject = state.projects.projects.find(
+          (p: Project) => p.id === projectId
+        );
+
+        if (currentProject) {
+          return {
+            ...currentProject,
+            name: projectData.name || currentProject.name,
+            description: projectData.description || currentProject.description,
+            updatedAt: new Date().toISOString(),
+          } as Project;
+        } else {
+          throw new Error("Could not find project to update");
+        }
+      }
+
+      // If API returns proper ApiResponse structure
+      if (
+        response.data &&
+        typeof response.data === "object" &&
+        "data" in response.data
+      ) {
+        return response.data.data;
+      }
+
+      throw new Error("Unexpected response format from server");
     } catch (error) {
       const err = error as AxiosError<{ message: string }>;
       return rejectWithValue(
@@ -562,26 +688,205 @@ export const joinProjectThunk = createAsyncThunk(
         typeof rawResponse === "object" &&
         "success" in rawResponse
       ) {
-        const response = rawResponse as ApiResponse<any>;
+        const response = rawResponse as ApiResponse<{
+          projectId: string;
+          message: string;
+        }>;
         if (response.success) {
           return {
             projectId,
-            message: response.message || "Successfully applied to project",
+            message:
+              response.message || VieMessageConstant.ProjectApplySuccessfully,
           };
         } else {
-          throw new Error(response.message || "Failed to apply to project");
+          throw new Error(
+            response.message || VieMessageConstant.ProjectApplyFailed
+          );
         }
       } else {
         // If no success field, assume success if we get here without throwing
         return {
           projectId,
-          message: "Successfully applied to project",
+          message: VieMessageConstant.ProjectApplySuccessfully,
+        };
+      }
+    } catch (error) {
+      const err = error as AxiosError<{
+        message: string;
+        success: boolean;
+        statusCode: number;
+      }>;
+
+      // Check if error object has the response data directly (interceptor might flatten it)
+      let errorData: Record<string, unknown> | null = null;
+      let errorStatus: number | undefined = undefined;
+
+      if (err.response) {
+        errorData = err.response.data as Record<string, unknown>;
+        errorStatus = err.response.status;
+      } else if ((error as Record<string, unknown>).data) {
+        // Sometimes interceptors flatten the error structure
+        errorData = (error as Record<string, unknown>).data as Record<
+          string,
+          unknown
+        >;
+        errorStatus = (error as Record<string, unknown>).status as number;
+      } else if (
+        (error as Record<string, unknown>).status &&
+        (error as Record<string, unknown>).message
+      ) {
+        // Direct error object
+        errorData = { message: (error as Record<string, unknown>).message };
+        errorStatus = (error as Record<string, unknown>).status as number;
+      }
+
+      // Check if we have no usable error information
+      if (!errorData && !errorStatus) {
+        return rejectWithValue("Lỗi kết nối mạng. Vui lòng thử lại.");
+      }
+
+      // Handle specific error cases
+      let errorMessage = VieMessageConstant.ProjectApplyFailed;
+
+      if (errorStatus === 400 && errorData) {
+        // Try to extract message from different possible structures
+        let backendMessage = "";
+        if (typeof errorData === "string") {
+          backendMessage = errorData;
+        } else if (errorData && typeof errorData === "object") {
+          // Handle case insensitive message property
+          backendMessage =
+            (errorData.message as string) ||
+            (errorData.Message as string) ||
+            (errorData.error as string) ||
+            (errorData.Error as string) ||
+            "";
+        }
+
+        // Check specific error scenarios - IMPORTANT: "You Have approved to Project" means user was removed but trying to rejoin
+        const message = backendMessage.toLowerCase();
+
+        if (
+          message.includes("you have approved to project") ||
+          message.includes("already approved") ||
+          message.includes("đã được phê duyệt") ||
+          message.includes("bạn đã được chấp nhận")
+        ) {
+          // This actually means the user was removed and cannot rejoin
+          errorMessage = VieMessageConstant.ProjectApplyRemovedUser;
+        } else if (
+          message.includes("removed") ||
+          message.includes("đã bị loại") ||
+          message.includes("không thể tham gia lại") ||
+          message.includes("member was removed") ||
+          message.includes("user has been removed") ||
+          message.includes("banned") ||
+          message.includes("cấm") ||
+          message.includes("cannot rejoin") ||
+          message.includes("không được phép") ||
+          message.includes("invalid status transition") ||
+          message.includes("status cannot be changed")
+        ) {
+          errorMessage = VieMessageConstant.ProjectApplyRemovedUser;
+        } else if (
+          message.includes("already exists") ||
+          message.includes("already member") ||
+          message.includes("đã tồn tại") ||
+          message.includes("đã là thành viên") ||
+          message.includes("duplicate")
+        ) {
+          errorMessage = VieMessageConstant.ProjectApplyAlreadyExists;
+        } else if (
+          message.includes("pending") ||
+          message.includes("đang chờ")
+        ) {
+          errorMessage = VieMessageConstant.ProjectApplyPending;
+        } else if (
+          message.includes("invalid") ||
+          message.includes("không hợp lệ")
+        ) {
+          errorMessage = VieMessageConstant.ProjectApplyInvalidStatus;
+        } else {
+          // Use the exact message from backend if available
+          errorMessage =
+            backendMessage || VieMessageConstant.ProjectApplyFailed;
+        }
+      } else if (errorStatus === 403) {
+        errorMessage = VieMessageConstant.ProjectApplyNoPermission;
+      } else if (errorStatus === 404) {
+        errorMessage = VieMessageConstant.ProjectApplyNotFound;
+      } else {
+        // Try to get message from errorData if available
+        const fallbackMessage =
+          errorData && typeof errorData === "object"
+            ? (errorData.message as string) ||
+              (errorData.Message as string) ||
+              ""
+            : "";
+        errorMessage = fallbackMessage || VieMessageConstant.ProjectApplyFailed;
+      }
+
+      return rejectWithValue(errorMessage);
+    }
+  }
+);
+
+// Remove a member from project
+export const removeMemberThunk = createAsyncThunk(
+  "projects/removeMember",
+  async (
+    params: {
+      projectId: string;
+      memberId: string;
+    },
+    { rejectWithValue }
+  ) => {
+    try {
+      const { projectId, memberId } = params;
+
+      const axiosResp = await callApiWithRetry(() =>
+        axiosClient.delete(
+          ROUTES_API_PROJECT_MEMBERS.DELETE_MEMBER(projectId, memberId)
+        )
+      );
+
+      // Handle response more safely - axios interceptors might modify the structure
+      const rawResponse = axiosResp.data || axiosResp;
+
+      // Check if response has success field
+      if (
+        rawResponse &&
+        typeof rawResponse === "object" &&
+        "success" in rawResponse
+      ) {
+        const response = rawResponse as ApiResponse<{
+          projectId: string;
+          memberId: string;
+        }>;
+        if (response.success) {
+          return {
+            projectId,
+            memberId,
+            message:
+              response.message || "Đã loại thành viên khỏi dự án thành công",
+          };
+        } else {
+          throw new Error(
+            response.message || "Không thể loại thành viên khỏi dự án"
+          );
+        }
+      } else {
+        // If no success field, assume success if we get here without throwing
+        return {
+          projectId,
+          memberId,
+          message: "Đã loại thành viên khỏi dự án thành công",
         };
       }
     } catch (error) {
       const err = error as AxiosError<{ message: string }>;
       return rejectWithValue(
-        err.response?.data?.message || "Failed to apply to project"
+        err.response?.data?.message || "Không thể loại thành viên khỏi dự án"
       );
     }
   }

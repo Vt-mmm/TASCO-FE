@@ -112,10 +112,29 @@ async function callApiWithRetry<T>(
 // Get WorkAreas by Project ID
 export const getWorkAreasByProjectThunk = createAsyncThunk(
   "workAreas/getByProject",
-  async (projectId: string, { rejectWithValue }) => {
+  async (
+    params: {
+      projectId: string;
+      pageIndex?: number;
+      pageSize?: number;
+    },
+    { rejectWithValue }
+  ) => {
     try {
+      const { projectId, pageIndex = 1, pageSize = 10 } = params;
+
+      // Build query parameters
+      const queryParams = new URLSearchParams({
+        pageIndex: pageIndex.toString(),
+        pageSize: pageSize.toString(),
+      });
+
       const response = await callApiWithRetry(() =>
-        axiosClient.get(ROUTES_API_WORK_AREAS.GET_BY_PROJECT(projectId))
+        axiosClient.get(
+          `${ROUTES_API_WORK_AREAS.GET_BY_PROJECT(
+            projectId
+          )}?${queryParams.toString()}`
+        )
       );
 
       let backendWorkAreasData: BackendWorkAreaResponse[] = [];

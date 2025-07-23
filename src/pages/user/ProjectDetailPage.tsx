@@ -6,6 +6,7 @@ import {
   approveJoinRequestThunk,
   rejectJoinRequestThunk,
   joinProjectThunk,
+  removeMemberThunk,
 } from "../../redux/projects/projectsThunks";
 import {
   getWorkAreasByProjectThunk,
@@ -57,6 +58,7 @@ import DeleteWorkTaskConfirmationDialog from "../../sections/user/projectDetail/
 import CreateObjectiveDialog from "../../sections/user/projectDetail/CreateObjectiveDialog";
 import EditObjectiveDialog from "../../sections/user/projectDetail/EditObjectiveDialog";
 import TaskDetailDialog from "../../sections/user/projectDetail/TaskDetailDialog";
+import ManageMembersDialog from "../../sections/user/projectDetail/ManageMembersDialog";
 
 export default function ProjectDetailPage() {
   const { id } = useParams<{ id: string }>();
@@ -97,12 +99,21 @@ export default function ProjectDetailPage() {
   const [selectedTaskForDetail, setSelectedTaskForDetail] =
     useState<WorkTask | null>(null);
 
+  // Manage members dialog states
+  const [manageMembersDialogOpen, setManageMembersDialogOpen] = useState(false);
+
   // Redux states
   const {
     currentProject,
     isLoading: projectLoading,
+    isRemovingMember,
     error: projectError,
   } = useAppSelector((s) => s.projects);
+
+  // Debug: Log currentProject members changes
+  useEffect(() => {
+    // Members changed - component will re-render automatically
+  }, [currentProject?.members, currentProject?.id]);
 
   const {
     workAreasByProject,
@@ -236,7 +247,9 @@ export default function ProjectDetailPage() {
     const loadWorkAreas = async () => {
       try {
         setWorkAreasLoadFailed(false);
-        const workAreasResult = await dispatch(getWorkAreasByProjectThunk(id));
+        const workAreasResult = await dispatch(
+          getWorkAreasByProjectThunk({ projectId: id })
+        );
 
         if (getWorkAreasByProjectThunk.fulfilled.match(workAreasResult)) {
           // Work areas loaded successfully
@@ -264,7 +277,9 @@ export default function ProjectDetailPage() {
       if (isApprovedMember) {
         try {
           setWorkAreasLoadFailed(false);
-          await dispatch(getWorkAreasByProjectThunk(id)).unwrap();
+          await dispatch(
+            getWorkAreasByProjectThunk({ projectId: id })
+          ).unwrap();
         } catch {
           setWorkAreasLoadFailed(true);
         }
@@ -280,7 +295,7 @@ export default function ProjectDetailPage() {
 
   const handleRetryWorkAreas = () => {
     if (id && isApprovedMember) {
-      dispatch(getWorkAreasByProjectThunk(id));
+      dispatch(getWorkAreasByProjectThunk({ projectId: id }));
     }
   };
 
@@ -340,7 +355,7 @@ export default function ProjectDetailPage() {
 
   const handleRefreshWorkAreas = async () => {
     if (id) {
-      await dispatch(getWorkAreasByProjectThunk(id));
+      await dispatch(getWorkAreasByProjectThunk({ projectId: id }));
     }
   };
 
@@ -367,7 +382,7 @@ export default function ProjectDetailPage() {
       ).unwrap();
 
       // Refresh work areas to get updated data
-      await dispatch(getWorkAreasByProjectThunk(id));
+      await dispatch(getWorkAreasByProjectThunk({ projectId: id }));
       setEditWorkAreaDialogOpen(false);
       setSelectedWorkArea(null);
     } catch {
@@ -387,7 +402,7 @@ export default function ProjectDetailPage() {
       ).unwrap();
 
       // Refresh work areas to get updated data
-      await dispatch(getWorkAreasByProjectThunk(id));
+      await dispatch(getWorkAreasByProjectThunk({ projectId: id }));
       setDeleteWorkAreaDialogOpen(false);
       setSelectedWorkArea(null);
     } catch {
@@ -443,7 +458,7 @@ export default function ProjectDetailPage() {
       ).unwrap();
 
       // Refresh work areas to get updated data
-      await dispatch(getWorkAreasByProjectThunk(id));
+      await dispatch(getWorkAreasByProjectThunk({ projectId: id }));
       setEditWorkTaskDialogOpen(false);
       setSelectedWorkTask(null);
     } catch {
@@ -477,7 +492,7 @@ export default function ProjectDetailPage() {
       ).unwrap();
 
       // Refresh work areas to get updated data
-      await dispatch(getWorkAreasByProjectThunk(id));
+      await dispatch(getWorkAreasByProjectThunk({ projectId: id }));
       setDeleteWorkTaskDialogOpen(false);
       setSelectedWorkTask(null);
     } catch {
@@ -519,7 +534,35 @@ export default function ProjectDetailPage() {
   const handleObjectiveSuccess = () => {
     // Refresh work areas to get updated objectives count
     if (id) {
-      dispatch(getWorkAreasByProjectThunk(id));
+      dispatch(getWorkAreasByProjectThunk({ projectId: id }));
+    }
+  };
+
+  // Manage Members handlers
+  const handleManageMembers = () => {
+    setManageMembersDialogOpen(true);
+  };
+
+  const handleCloseMembersDialog = () => {
+    setManageMembersDialogOpen(false);
+  };
+
+  const handleRemoveMember = async (memberId: string) => {
+    if (!id) return;
+
+    try {
+      // Step 1: Call removeMemberThunk - this should handle both API call and state update
+      await dispatch(
+        removeMemberThunk({
+          projectId: id,
+          memberId,
+        })
+      ).unwrap();
+
+      // Wait a moment for Redux state to update
+      await new Promise((resolve) => setTimeout(resolve, 200));
+    } catch {
+      // Error already handled by toast in Redux
     }
   };
 
@@ -905,6 +948,7 @@ export default function ProjectDetailPage() {
             onCreateObjective={handleCreateObjective}
             onEditObjective={handleEditObjective}
             onViewTaskDetails={handleViewTaskDetails}
+            onManageMembers={handleManageMembers}
           />
 
           {/* Edit Work Area Dialog */}
@@ -965,15 +1009,23 @@ export default function ProjectDetailPage() {
             task={selectedTaskForDetail}
             onClose={handleCloseTaskDetailDialog}
             onEditTask={handleEditTaskFromDetail}
+            onCreateObjective={handleCreateObjective}
+            onEditObjective={handleEditObjective}
           />
 
-          {/* Manage Members Dialog - Temporarily commented out due to props mismatch */}
-          {/* <ManageMembersDialog
+          {/* Manage Members Dialog */}
+          <ManageMembersDialog
             open={manageMembersDialogOpen}
-            project={currentProject}
+            members={currentProject?.members || []}
+            pendingMembers={
+              currentProject?.members?.filter((m) => m.status === "pending") ||
+              []
+            }
+            currentUserId={currentUserId}
             onClose={handleCloseMembersDialog}
             onRemoveMember={handleRemoveMember}
-          /> */}
+            isRemovingMember={isRemovingMember}
+          />
         </Container>
       )}
     </Box>

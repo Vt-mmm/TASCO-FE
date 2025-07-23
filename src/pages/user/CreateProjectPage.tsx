@@ -92,7 +92,6 @@ const CreateProjectPage: React.FC = () => {
 
       if (newProjectId) {
         // Create default work area then navigate
-        console.log("🚀 Creating default work area for", newProjectId);
         await dispatch(
           createWorkAreaThunk({
             projectId: newProjectId,
@@ -104,17 +103,15 @@ const CreateProjectPage: React.FC = () => {
           })
         )
           .unwrap()
-          .catch((err) => {
-            console.error("Failed to create default work area", err);
+          .catch(() => {
+            // Ignore work area creation errors, not critical
           });
 
         navigate(PATH_USER.projectDetail(newProjectId));
       } else {
-        console.warn("Project id not found in create response", result);
         navigate(PATH_USER.dashboard);
       }
     } catch (error) {
-      console.error("❌ Create project error:", error);
       setSubmitError(error as string);
     }
   };

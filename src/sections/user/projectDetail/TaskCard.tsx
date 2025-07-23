@@ -70,8 +70,6 @@ const TaskCard: React.FC<Props> = ({
   task,
   onEditTask,
   onDeleteTask,
-  onCreateObjective,
-  onEditObjective,
   onViewDetails,
 }) => {
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
@@ -111,7 +109,6 @@ const TaskCard: React.FC<Props> = ({
 
     if (!isInteractiveElement && onViewDetails) {
       event.stopPropagation();
-      console.log("🔍 Opening task detail for:", task.name);
       onViewDetails(task);
     }
   };

@@ -86,6 +86,21 @@ export const ROUTES_API_TASK_OBJECTIVES = {
     `/api/worktasks/${workTaskId}/taskobjectives/${taskObjectiveId}/complete`,
 };
 
+// Task Members - nested under work tasks
+export const ROUTES_API_TASK_MEMBERS = {
+  GET_BY_WORK_TASK: (workTaskId: string) =>
+    `/api/worktasks/${workTaskId}/members`,
+  CREATE: (workTaskId: string) => `/api/worktasks/${workTaskId}/members`,
+  GET_BY_ID: (workTaskId: string, memberId: string) =>
+    `/api/worktasks/${workTaskId}/members/${memberId}`,
+  UPDATE: (workTaskId: string, memberId: string) =>
+    `/api/worktasks/${workTaskId}/members/${memberId}`,
+  DELETE: (workTaskId: string, memberId: string) =>
+    `/api/worktasks/${workTaskId}/members/${memberId}`,
+  REMOVE: (workTaskId: string, memberId: string) =>
+    `/api/worktasks/${workTaskId}/members/${memberId}/remove`,
+};
+
 export const ROUTES_API_COMMENTS = {
   CREATE: ROOTS_COMMENTS,
   GET_BY_TASK: (taskId: string) => path(ROOTS_COMMENTS, `/task/${taskId}`),

@@ -41,6 +41,7 @@ interface Props {
   onCreateObjective?: (workTask: WorkTask) => void;
   onEditObjective?: (objective: TaskObjective) => void;
   onViewTaskDetails?: (workTask: WorkTask) => void;
+  onManageTaskMembers?: (workTask: WorkTask) => void; // New prop for managing task members
 }
 
 const WorkAreaColumn: React.FC<Props> = ({
@@ -53,6 +54,7 @@ const WorkAreaColumn: React.FC<Props> = ({
   onCreateObjective,
   onEditObjective,
   onViewTaskDetails,
+  onManageTaskMembers,
 }) => {
   const dispatch = useAppDispatch();
   const { isCreating } = useAppSelector((state) => state.workTasks);
@@ -75,6 +77,7 @@ const WorkAreaColumn: React.FC<Props> = ({
       if (createWorkTaskThunk.fulfilled.match(resultAction)) {
         // Task created successfully
         setIsCreateDialogOpen(false);
+
         // Refresh work areas to get updated work tasks
         onTaskCreated?.();
       }
@@ -227,6 +230,7 @@ const WorkAreaColumn: React.FC<Props> = ({
                 onCreateObjective={onCreateObjective}
                 onEditObjective={onEditObjective}
                 onViewDetails={onViewTaskDetails}
+                onManageMembers={onManageTaskMembers}
               />
             ))}
           </Stack>

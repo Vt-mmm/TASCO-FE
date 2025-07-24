@@ -10,6 +10,7 @@ import WorkAreaColumn from "./WorkAreaColumn";
 
 interface Props {
   workAreas: WorkArea[];
+  currentUserProjectRole?: string; // Add this prop
   onOpenDialog: () => void;
   isCreating: boolean;
   onTaskCreated?: () => void; // Callback to refresh work areas after task creation
@@ -20,6 +21,7 @@ interface Props {
   onCreateObjective?: (workTask: WorkTask) => void;
   onEditObjective?: (objective: TaskObjective) => void;
   onViewTaskDetails?: (workTask: WorkTask) => void;
+  onManageTaskMembers?: (workTask: WorkTask) => void; // New prop for managing task members
 }
 
 const WorkAreasBoard: React.FC<Props> = ({
@@ -34,6 +36,7 @@ const WorkAreasBoard: React.FC<Props> = ({
   onCreateObjective,
   onEditObjective,
   onViewTaskDetails,
+  onManageTaskMembers,
 }) => {
   return (
     <Box
@@ -98,6 +101,7 @@ const WorkAreasBoard: React.FC<Props> = ({
             onCreateObjective={onCreateObjective}
             onEditObjective={onEditObjective}
             onViewTaskDetails={onViewTaskDetails}
+            onManageTaskMembers={onManageTaskMembers}
           />
         ))}
 

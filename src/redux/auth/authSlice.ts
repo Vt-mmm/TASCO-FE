@@ -166,7 +166,6 @@ const authSlice = createSlice({
         state.isLoading = true;
         state.isError = false;
         state.errorMessage = null;
-        console.log("getUserInfoThunk.pending - state reset");
       })
       .addCase(getUserInfoThunk.fulfilled, (state, action) => {
         state.isLoading = false;
@@ -174,17 +173,12 @@ const authSlice = createSlice({
         state.isSuccess = true;
         state.accountInfo = action.payload;
         state.errorMessage = null;
-        console.log(
-          "getUserInfoThunk.fulfilled - accountInfo set:",
-          action.payload
-        );
       })
       .addCase(getUserInfoThunk.rejected, (state, action) => {
         state.isLoading = false;
         state.isError = true;
         state.isSuccess = false;
         state.errorMessage = action.payload as string;
-        console.log("getUserInfoThunk.rejected - error:", action.payload);
       })
 
       .addCase(logoutThunk.pending, (state) => {

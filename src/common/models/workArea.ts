@@ -24,9 +24,21 @@ export interface WorkTask {
   createdAt: string;
   updatedAt: string;
   taskObjectives?: TaskObjective[];
+  // Task members for team collaboration
+  taskMembers?: TaskMemberInfo[];
   // Computed fields for display
   objectivesCount?: number;
   completedObjectivesCount?: number;
+}
+
+// Task member info for display in WorkTask
+export interface TaskMemberInfo {
+  userId: string;
+  userName: string;
+  userEmail?: string;
+  role: "OWNER" | "ASSIGNEE" | "REVIEWER" | "MEMBER";
+  joinedAt: string;
+  isRemoved?: boolean;
 }
 
 export interface TaskObjective {

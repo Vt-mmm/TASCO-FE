@@ -10,6 +10,7 @@ import {
   IconButton,
   Menu,
   MenuItem,
+  AvatarGroup,
 } from "@mui/material";
 import {
   Person,
@@ -19,6 +20,7 @@ import {
   Delete,
   CheckCircle,
   Visibility,
+  Group,
 } from "@mui/icons-material";
 import { WorkTask, TaskObjective } from "../../../common/models/workArea";
 
@@ -29,6 +31,7 @@ interface Props {
   onCreateObjective?: (task: WorkTask) => void;
   onEditObjective?: (objective: TaskObjective) => void;
   onViewDetails?: (task: WorkTask) => void;
+  onManageMembers?: (task: WorkTask) => void; // New prop for managing task members
 }
 
 function getStatusColor(
@@ -71,6 +74,7 @@ const TaskCard: React.FC<Props> = ({
   onEditTask,
   onDeleteTask,
   onViewDetails,
+  onManageMembers,
 }) => {
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const menuOpen = Boolean(anchorEl);
@@ -96,6 +100,14 @@ const TaskCard: React.FC<Props> = ({
     event.stopPropagation();
     if (onDeleteTask) {
       onDeleteTask(task);
+    }
+    handleMenuClose();
+  };
+
+  const handleManageMembersClick = (event: React.MouseEvent) => {
+    event.stopPropagation();
+    if (onManageMembers) {
+      onManageMembers(task);
     }
     handleMenuClose();
   };
@@ -286,20 +298,63 @@ const TaskCard: React.FC<Props> = ({
             )}
           </Box>
 
-          {task.assignedToId && (
-            <Tooltip title="Assigned user">
-              <Avatar
-                sx={{
-                  width: 24,
-                  height: 24,
-                  backgroundColor: "#2C2C2C",
-                  fontSize: "0.7rem",
-                }}
-              >
-                <Person sx={{ fontSize: 14 }} />
-              </Avatar>
-            </Tooltip>
-          )}
+          {/* Task Members and Assigned User */}
+          <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+            {/* Task Members Avatars - Show up to 3 members */}
+            {task.taskMembers && task.taskMembers.length > 0 && (
+              <Tooltip title={`${task.taskMembers.length} team member(s)`}>
+                <AvatarGroup
+                  max={3}
+                  sx={{
+                    "& .MuiAvatar-root": {
+                      width: 20,
+                      height: 20,
+                      fontSize: "0.6rem",
+                      border: "1px solid white",
+                    },
+                  }}
+                >
+                  {task.taskMembers.slice(0, 3).map((member, index) => (
+                    <Avatar
+                      key={member.userId || index}
+                      sx={{
+                        backgroundColor:
+                          member.role === "OWNER"
+                            ? "#2E7D32"
+                            : member.role === "ASSIGNEE"
+                            ? "#1976D2"
+                            : member.role === "REVIEWER"
+                            ? "#F57C00"
+                            : "#9E9E9E",
+                      }}
+                    >
+                      {member.userName
+                        ? member.userName.charAt(0).toUpperCase()
+                        : "U"}
+                    </Avatar>
+                  ))}
+                </AvatarGroup>
+              </Tooltip>
+            )}
+
+            {/* Assigned User (legacy support) */}
+            {task.assignedToId &&
+              (!task.taskMembers || task.taskMembers.length === 0) && (
+                <Tooltip title="Assigned user">
+                  <Avatar
+                    sx={{
+                      width: 24,
+                      height: 24,
+                      backgroundColor: "#2C2C2C",
+                      fontSize: "0.7rem",
+                    }}
+                  >
+                    <Person sx={{ fontSize: 14 }} />
+                  </Avatar>
+                </Tooltip>
+              )}
+
+          </Box>
         </Box>
       </CardContent>
 
@@ -321,6 +376,12 @@ const TaskCard: React.FC<Props> = ({
           <MenuItem onClick={handleEditClick} sx={{ gap: 1 }}>
             <Edit sx={{ fontSize: 16 }} />
             Edit Task
+          </MenuItem>
+        )}
+        {onManageMembers && (
+          <MenuItem onClick={handleManageMembersClick} sx={{ gap: 1 }}>
+            <Group sx={{ fontSize: 16 }} />
+            Manage Members
           </MenuItem>
         )}
         {onDeleteTask && (

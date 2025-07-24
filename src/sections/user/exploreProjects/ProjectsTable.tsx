@@ -94,7 +94,7 @@ const ProjectsTable: React.FC<ProjectsTableProps> = ({
     if (!project.members || project.members.length === 0) {
       return 1; // At least the owner
     }
-    
+
     // Filter out removed members, same logic as getProjectByIdThunk
     const activeMembers = project.members.filter(
       (member) =>
@@ -102,7 +102,7 @@ const ProjectsTable: React.FC<ProjectsTableProps> = ({
         member.approvedStatus !== "REMOVED" &&
         member.approvedStatus !== "removed"
     );
-    
+
     return Math.max(activeMembers.length, 1); // At least 1 (owner)
   };
 
@@ -122,7 +122,14 @@ const ProjectsTable: React.FC<ProjectsTableProps> = ({
 
   const getStatusColor = (
     status: string
-  ): "default" | "primary" | "secondary" | "error" | "info" | "success" | "warning" => {
+  ):
+    | "default"
+    | "primary"
+    | "secondary"
+    | "error"
+    | "info"
+    | "success"
+    | "warning" => {
     switch (status?.toLowerCase()) {
       case "active":
       case "đang hoạt động":

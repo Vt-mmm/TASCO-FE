@@ -17,6 +17,7 @@ import JoinRequestDialog from "./JoinRequestDialog";
 interface Props {
   project: Project;
   workAreas: WorkArea[];
+  currentUserProjectRole?: string; // Add this prop
   projectRequests?: ProjectRequest[];
   isLoading: boolean;
   error: string | null;
@@ -33,12 +34,14 @@ interface Props {
   onCreateObjective?: (workTask: WorkTask) => void;
   onEditObjective?: (objective: TaskObjective) => void;
   onViewTaskDetails?: (workTask: WorkTask) => void;
-  onManageMembers?: () => void;
+  onManageMembers?: () => void; // For project members
+  onManageTaskMembers?: (workTask: WorkTask) => void; // For task members
 }
 
 const BoardView: React.FC<Props> = ({
   project,
   workAreas,
+  currentUserProjectRole,
   projectRequests = [],
   isLoading,
   error,
@@ -56,6 +59,7 @@ const BoardView: React.FC<Props> = ({
   onEditObjective,
   onViewTaskDetails,
   onManageMembers,
+  onManageTaskMembers,
 }) => {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [requestDialogOpen, setRequestDialogOpen] = useState(false);
@@ -191,6 +195,7 @@ const BoardView: React.FC<Props> = ({
         {/* Work Areas Board */}
         <WorkAreasBoard
           workAreas={workAreas}
+          currentUserProjectRole={currentUserProjectRole}
           onOpenDialog={handleOpenDialog}
           isCreating={isCreating}
           onTaskCreated={onRefreshWorkAreas}
@@ -201,6 +206,7 @@ const BoardView: React.FC<Props> = ({
           onCreateObjective={onCreateObjective}
           onEditObjective={onEditObjective}
           onViewTaskDetails={onViewTaskDetails}
+          onManageTaskMembers={onManageTaskMembers}
         />
       </Paper>
 

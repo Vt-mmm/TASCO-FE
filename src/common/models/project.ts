@@ -19,6 +19,8 @@ export interface ProjectMember {
   id?: string;
   userId: string;
   userName?: string; // Display name for the user
+  userEmail?: string; // Email của user
+  userGmail?: string; // Email từ backend (tên field khác)
   projectId?: string;
   role:
     | "owner"

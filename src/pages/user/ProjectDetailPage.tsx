@@ -40,6 +40,9 @@ import {
   CardContent,
   Chip,
   Paper,
+  Dialog,
+  DialogTitle,
+  DialogContent,
 } from "@mui/material";
 import {
   ArrowBack,
@@ -58,6 +61,7 @@ import DeleteWorkTaskConfirmationDialog from "../../sections/user/projectDetail/
 import CreateObjectiveDialog from "../../sections/user/projectDetail/CreateObjectiveDialog";
 import EditObjectiveDialog from "../../sections/user/projectDetail/EditObjectiveDialog";
 import TaskDetailDialog from "../../sections/user/projectDetail/TaskDetailDialog";
+import TaskMemberManager from "../../sections/user/taskMembers/TaskMemberManager";
 import ManageMembersDialog from "../../sections/user/projectDetail/ManageMembersDialog";
 
 export default function ProjectDetailPage() {
@@ -101,6 +105,11 @@ export default function ProjectDetailPage() {
 
   // Manage members dialog states
   const [manageMembersDialogOpen, setManageMembersDialogOpen] = useState(false);
+
+  // Task member management states
+  const [taskMemberDialogOpen, setTaskMemberDialogOpen] = useState(false);
+  const [selectedTaskForMembers, setSelectedTaskForMembers] =
+    useState<WorkTask | null>(null);
 
   // Redux states
   const {
@@ -577,6 +586,17 @@ export default function ProjectDetailPage() {
     setSelectedTaskForDetail(null);
   };
 
+  // Task Member Management handlers
+  const handleManageTaskMembers = (task: WorkTask) => {
+    setSelectedTaskForMembers(task);
+    setTaskMemberDialogOpen(true);
+  };
+
+  const handleCloseTaskMemberDialog = () => {
+    setTaskMemberDialogOpen(false);
+    setSelectedTaskForMembers(null);
+  };
+
   const handleEditTaskFromDetail = (task: WorkTask) => {
     // Close task detail dialog and open edit dialog
     handleCloseTaskDetailDialog();
@@ -928,6 +948,7 @@ export default function ProjectDetailPage() {
           <BoardView
             project={currentProject}
             workAreas={projectWorkAreas}
+            currentUserProjectRole={currentUserMembership?.role}
             projectRequests={getPendingJoinRequests(currentProject)}
             isLoading={workAreasLoading}
             error={
@@ -949,6 +970,7 @@ export default function ProjectDetailPage() {
             onEditObjective={handleEditObjective}
             onViewTaskDetails={handleViewTaskDetails}
             onManageMembers={handleManageMembers}
+            onManageTaskMembers={handleManageTaskMembers}
           />
 
           {/* Edit Work Area Dialog */}
@@ -1012,6 +1034,42 @@ export default function ProjectDetailPage() {
             onCreateObjective={handleCreateObjective}
             onEditObjective={handleEditObjective}
           />
+
+          {/* Task Member Management Dialog */}
+          {selectedTaskForMembers && (
+            <Dialog
+              open={taskMemberDialogOpen}
+              onClose={handleCloseTaskMemberDialog}
+              maxWidth="lg"
+              fullWidth
+              PaperProps={{
+                sx: {
+                  borderRadius: 3,
+                  overflow: "hidden",
+                },
+              }}
+            >
+              <DialogTitle
+                sx={{
+                  pb: 1,
+                  borderBottom: "1px solid #E0E0E0",
+                  backgroundColor: "#FAFAFA",
+                }}
+              >
+                <Typography variant="h6" sx={{ fontWeight: 600 }}>
+                  Manage Team Members - {selectedTaskForMembers.name}
+                </Typography>
+              </DialogTitle>
+              <DialogContent sx={{ p: 0 }}>
+                <TaskMemberManager
+                  workTaskId={selectedTaskForMembers.id}
+                  taskName={selectedTaskForMembers.name}
+                  currentUserProjectRole={currentUserMembership?.role}
+                  projectId={currentProject?.id}
+                />
+              </DialogContent>
+            </Dialog>
+          )}
 
           {/* Manage Members Dialog */}
           <ManageMembersDialog

@@ -74,11 +74,9 @@ out
 
 # Nuxt.js build / generate output
 .nuxt
-dist
 
 # Gatsby files
 .cache/
-public
 
 # Storybook build outputs
 .out
@@ -142,3 +140,55 @@ yarn-error.log*
 
 # Documentation build
 docs/build/
+
+# TASCO specific ignores
+# Development tools
+.cursor/
+setup-favicon.sh
+
+# Favicon setup guide (optional, can be included)
+FAVICON-SETUP.md
+
+# Hot reload
+*.hot-update.js
+*.hot-update.json
+
+# Bundle analyzer
+bundle-analyzer-report.html
+
+# Error reports
+error-report.json
+
+# Performance logs
+performance.log
+
+# Local configuration overrides
+config.local.js
+config.local.json
+
+# Database files (if any local database is used)
+*.db
+*.sqlite
+*.sqlite3
+
+# Generated documentation
+typedoc/
+docs/generated/
+
+# Sourcemaps (exclude from production)
+*.map
+
+# Webpack stats
+webpack-stats.json
+
+# Jest coverage
+coverage/
+*.coverage
+
+# Cypress
+cypress/videos/
+cypress/screenshots/
+
+# E2E test results
+test-results/
+playwright-report/

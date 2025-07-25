@@ -1,0 +1,24 @@
+{
+  "name": "Tasco - Task Management System",
+  "short_name": "Tasco",
+  "description": "A comprehensive task management and project collaboration platform",
+  "theme_color": "#494A7E",
+  "background_color": "#ffffff",
+  "display": "standalone",
+  "scope": "/",
+  "start_url": "/",
+  "icons": [
+    {
+      "src": "/tasco-logo.png",
+      "sizes": "192x192 512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/tasco-network-logo.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

@@ -6,7 +6,10 @@ import {
   CreateCommentRequest,
   UpdateCommentRequest,
 } from "../../common/models/comment";
-import { ApiResponse } from "../../common/models/common";
+import { 
+  BackendApiResponse, 
+  PaginatedCommentsResponse 
+} from "../../common/models/common";
 import { AxiosError } from "axios";
 
 // Helper function cho API calls với retry
@@ -39,46 +42,40 @@ export const createCommentThunk = createAsyncThunk(
   async (commentData: CreateCommentRequest, { rejectWithValue }) => {
     try {
       const response = await callApiWithRetry(async () => {
-        const result = await axiosClient.post<ApiResponse<Comment>>(
+        // Axios interceptor returns response.data directly
+        const result = await axiosClient.post(
           ROUTES_API_COMMENTS.CREATE,
           commentData
         );
         return result;
       });
 
-      // Backend returns: {success: true, message: "...", data: actualCommentData}
-      // Handle different response structures
-      let responseCommentData = response.data.data;
-
-      // If response is wrapped in success/message format
-      if (response.data.success && response.data.data) {
-        responseCommentData = response.data.data;
-      }
-      // If data is directly in response.data (fallback)
-      else if (
-        !responseCommentData &&
-        response.data &&
-        !response.data.success
-      ) {
-        responseCommentData = response.data;
+      // Response is already unwrapped by axios interceptor  
+      const apiResponse = response as unknown;
+      
+      // Check if it's the wrapped structure: {success: true, message: "...", data: actualCommentData}
+      if (apiResponse && typeof apiResponse === 'object' && 'success' in apiResponse && 'data' in apiResponse) {
+        const backendResponse = apiResponse as BackendApiResponse<Comment>;
+        
+        if (backendResponse.success && backendResponse.data) {
+          return backendResponse.data;
+        }
+        
+        // If success is false, throw error with backend message
+        throw new Error(backendResponse.message || "Failed to create comment");
       }
 
-      // For create comment, we expect a single comment object
-      // Backend might return just the comment ID and we need to construct the comment
-      if (
-        !responseCommentData ||
-        (!responseCommentData.id && typeof responseCommentData === "string")
-      ) {
-        // Return a minimal object to indicate success, UI will refresh to get full data
-        return {
-          id: responseCommentData || "temp-id",
-          taskId: commentData.taskId,
-          content: commentData.content,
-          createdAt: new Date().toISOString(),
-        };
+      // Check if response is directly the comment data (in case interceptor unwrapped it)
+      if (apiResponse && 
+          typeof apiResponse === 'object' && 
+          'id' in apiResponse && 
+          'taskId' in apiResponse && 
+          'content' in apiResponse) {
+        return apiResponse as Comment;
       }
 
-      return responseCommentData;
+      // Fallback if response structure is different
+      throw new Error("Invalid response structure from server");
     } catch (error) {
       const err = error as AxiosError<{ message: string }>;
 
@@ -116,7 +113,7 @@ export const getCommentsByTaskThunk = createAsyncThunk(
       const endpoint = ROUTES_API_COMMENTS.GET_BY_TASK(taskId);
 
       const response = await callApiWithRetry(() =>
-        axiosClient.get<ApiResponse<Comment[]>>(endpoint, {
+        axiosClient.get(endpoint, {
           params: {
             pageIndex,
             pageSize,
@@ -124,44 +121,52 @@ export const getCommentsByTaskThunk = createAsyncThunk(
         })
       );
 
-      // Handle different response structures
-      let commentsData = response.data.data;
+      // Response is already unwrapped by axios interceptor
+      const apiResponse = response as unknown;
+      
+      // Check if it's the wrapped structure: {success: true, message: "...", data: ...}
+      if (apiResponse && typeof apiResponse === 'object' && 'success' in apiResponse && 'data' in apiResponse) {
+        const backendResponse = apiResponse as BackendApiResponse<PaginatedCommentsResponse | Comment[]>;
+        
+        if (backendResponse.success && backendResponse.data) {
+          const data = backendResponse.data;
+          
+          // If data is an array of comments directly
+          if (Array.isArray(data)) {
+            return {
+              comments: data,
+              totalCount: data.length,
+              pageCount: 1,
+              currentPage: pageIndex,
+              pageSize: pageSize,
+            };
+          }
+          
+          // If data is an object with pagination info
+          if (typeof data === 'object' && !Array.isArray(data)) {
+            const comments = data.comments || data.data || data.items || [];
+            return {
+              comments: Array.isArray(comments) ? comments : [],
+              totalCount: data.totalCount || comments.length,
+              pageCount: data.pageCount || 1,
+              currentPage: data.currentPage || pageIndex,
+              pageSize: data.pageSize || pageSize,
+            };
+          }
+        }
+        
+        // If success is false, throw error with backend message
+        throw new Error(backendResponse.message || "Failed to fetch comments");
+      }
 
-      // If response is wrapped in success/message format with comments array
-      if (
-        response.data.success &&
-        response.data.data &&
-        response.data.data.comments
-      ) {
-        commentsData = response.data.data.comments;
-      }
-      // If response data has comments property directly
-      else if (commentsData && commentsData.comments) {
-        commentsData = commentsData.comments;
-      }
-      // If data is directly in response.data and has comments property
-      else if (response.data && response.data.comments) {
-        commentsData = response.data.comments;
-      }
-      // If data is directly in response.data (fallback)
-      else if (!commentsData && response.data && !response.data.success) {
-        commentsData = response.data;
-      }
-
-      // Ensure we return an array and include pagination metadata
-      const comments = Array.isArray(commentsData) ? commentsData : [];
-
-      // Extract pagination metadata
-      const paginationData = response.data.data || response.data;
-      const result = {
-        comments,
-        totalCount: paginationData?.totalCount || comments.length,
-        pageCount: paginationData?.pageCount || 1,
-        currentPage: paginationData?.currentPage || pageIndex,
+      // Fallback for unexpected response structure
+      return {
+        comments: [],
+        totalCount: 0,
+        pageCount: 1,
+        currentPage: pageIndex,
         pageSize: pageSize,
       };
-
-      return result;
     } catch (error) {
       const err = error as AxiosError<{ message: string }>;
       return rejectWithValue(
@@ -183,22 +188,28 @@ export const updateCommentThunk = createAsyncThunk(
   ) => {
     try {
       const response = await callApiWithRetry(() =>
-        axiosClient.put<ApiResponse<Comment>>(
+        axiosClient.put(
           ROUTES_API_COMMENTS.UPDATE(commentId),
           commentData
         )
       );
 
-      // Handle backend response format
-      let updatedComment = response.data.data;
-      if (!updatedComment && response.data.success && response.data.data) {
-        updatedComment = response.data.data;
-      }
-      if (!updatedComment && response.data && !response.data.success) {
-        updatedComment = response.data;
+      // Response is already unwrapped by axios interceptor
+      const apiResponse = response as unknown;
+      
+      // Check if it's the wrapped structure: {success: true, message: "...", data: updatedComment}
+      if (apiResponse && typeof apiResponse === 'object' && 'success' in apiResponse && 'data' in apiResponse) {
+        const backendResponse = apiResponse as BackendApiResponse<Comment>;
+        
+        if (backendResponse.success && backendResponse.data) {
+          return backendResponse.data;
+        }
+        
+        // If success is false, throw error with backend message
+        throw new Error(backendResponse.message || "Failed to update comment");
       }
 
-      return updatedComment;
+      throw new Error("Invalid response structure from server");
     } catch (error) {
       const err = error as AxiosError<{ message: string }>;
       return rejectWithValue(

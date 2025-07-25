@@ -2,12 +2,12 @@ export interface Comment {
   id: string;
   content: string;
   taskId: string;
-  authorId: string;
-  authorName: string;
+  userId: string;        // Backend trả về userId
+  userName: string;      // Backend trả về userName
   authorAvatar?: string;
   createdAt: string;
   updatedAt: string;
-  isEdited: boolean;
+  isDeleted: boolean;    // Backend trả về isDeleted
 }
 
 export interface CreateCommentRequest {

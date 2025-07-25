@@ -41,10 +41,10 @@ const CommentCard: React.FC<CommentCardProps> = ({
   const [isEditing, setIsEditing] = useState(false);
   const [editContent, setEditContent] = useState(comment.content);
   const [displayName, setDisplayName] = useState(
-    comment.authorName || "Loading..."
+    comment.userName || "Loading..."
   );
 
-  const isOwner = currentUserId === comment.authorId;
+  const isOwner = currentUserId === comment.userId;
   const menuOpen = Boolean(anchorEl);
 
   // Load display name
@@ -52,19 +52,19 @@ const CommentCard: React.FC<CommentCardProps> = ({
     const loadDisplayName = async () => {
       try {
         const name = await getUserDisplayName(
-          comment.authorId,
-          comment.authorName
+          comment.userId,
+          comment.userName
         );
         setDisplayName(name);
       } catch {
         setDisplayName(
-          comment.authorName || `User ${comment.authorId.substring(0, 8)}...`
+          comment.userName || `User ${comment.userId.substring(0, 8)}...`
         );
       }
     };
 
     loadDisplayName();
-  }, [comment.authorId, comment.authorName]);
+  }, [comment.userId, comment.userName]);
 
   const handleMenuOpen = (event: React.MouseEvent<HTMLElement>) => {
     setAnchorEl(event.currentTarget);
@@ -153,7 +153,7 @@ const CommentCard: React.FC<CommentCardProps> = ({
               {comment.authorAvatar ? (
                 <img
                   src={comment.authorAvatar}
-                  alt={comment.authorName}
+                  alt={comment.userName}
                   style={{ width: "100%", height: "100%", borderRadius: "50%" }}
                 />
               ) : (
@@ -181,7 +181,7 @@ const CommentCard: React.FC<CommentCardProps> = ({
                 >
                   {formatDate(comment.createdAt)}
                 </Typography>
-                {comment.isEdited && (
+                {comment.createdAt !== comment.updatedAt && (
                   <Typography
                     variant="caption"
                     sx={{

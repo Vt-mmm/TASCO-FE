@@ -9,6 +9,9 @@ import {
   Button,
 } from "@mui/material";
 import { Facebook, Instagram, LinkedIn, YouTube } from "@mui/icons-material";
+import { Link as RouterLink } from "react-router-dom";
+import { PATH_AUTH, PATH_USER, PATH_PUBLIC } from "../../../routes/paths";
+import TascoLogo from "../../../assets/Tasco.png";
 
 const Footer: React.FC = () => {
   return (
@@ -33,12 +36,15 @@ const Footer: React.FC = () => {
             }}
           >
             <Box>
-              <Typography
-                variant="h5"
-                sx={{ fontWeight: 700, mb: 1, fontStyle: "italic" }}
-              >
-                Logo
-              </Typography>
+              <Box
+                component="img"
+                src={TascoLogo}
+                alt="TASCO Logo"
+                sx={{
+                  height: 40,
+                  mb: 1,
+                }}
+              />
               <Typography variant="body1" sx={{ mb: 2, color: "#666666" }}>
                 Đăng ký nhận bản tin để cập nhật các tính năng và phát hành mới.
               </Typography>
@@ -116,14 +122,15 @@ const Footer: React.FC = () => {
             mb: 6,
           }}
         >
-          {/* Column 1 */}
+          {/* Column 1 - Sản phẩm */}
           <Box>
             <Typography variant="h6" sx={{ fontWeight: 600, mb: 2 }}>
-              Cột Một
+              Sản phẩm
             </Typography>
             <Box sx={{ display: "flex", flexDirection: "column", gap: 1 }}>
               <Link
-                href="#"
+                component={RouterLink}
+                to={PATH_PUBLIC.homepage}
                 color="inherit"
                 sx={{
                   color: "#666666",
@@ -131,10 +138,11 @@ const Footer: React.FC = () => {
                   "&:hover": { color: "#2C2C2C" },
                 }}
               >
-                Liên kết Một
+                Trang chủ
               </Link>
               <Link
-                href="#"
+                component={RouterLink}
+                to={PATH_USER.dashboard}
                 color="inherit"
                 sx={{
                   color: "#666666",
@@ -142,10 +150,11 @@ const Footer: React.FC = () => {
                   "&:hover": { color: "#2C2C2C" },
                 }}
               >
-                Liên kết Hai
+                Dashboard
               </Link>
               <Link
-                href="#"
+                component={RouterLink}
+                to={PATH_USER.projectExplore}
                 color="inherit"
                 sx={{
                   color: "#666666",
@@ -153,10 +162,11 @@ const Footer: React.FC = () => {
                   "&:hover": { color: "#2C2C2C" },
                 }}
               >
-                Liên kết Ba
+                Khám phá dự án
               </Link>
               <Link
-                href="#"
+                component={RouterLink}
+                to={PATH_USER.dashboard}
                 color="inherit"
                 sx={{
                   color: "#666666",
@@ -164,30 +174,20 @@ const Footer: React.FC = () => {
                   "&:hover": { color: "#2C2C2C" },
                 }}
               >
-                Liên kết Bốn
-              </Link>
-              <Link
-                href="#"
-                color="inherit"
-                sx={{
-                  color: "#666666",
-                  textDecoration: "none",
-                  "&:hover": { color: "#2C2C2C" },
-                }}
-              >
-                Liên kết Năm
+                Dự án của tôi
               </Link>
             </Box>
           </Box>
 
-          {/* Column 2 */}
+          {/* Column 2 - Hỗ trợ */}
           <Box>
             <Typography variant="h6" sx={{ fontWeight: 600, mb: 2 }}>
-              Cột Hai
+              Hỗ trợ
             </Typography>
             <Box sx={{ display: "flex", flexDirection: "column", gap: 1 }}>
               <Link
-                href="#"
+                component={RouterLink}
+                to={PATH_AUTH.login}
                 color="inherit"
                 sx={{
                   color: "#666666",
@@ -195,7 +195,19 @@ const Footer: React.FC = () => {
                   "&:hover": { color: "#2C2C2C" },
                 }}
               >
-                Liên kết Sáu
+                Đăng nhập
+              </Link>
+              <Link
+                component={RouterLink}
+                to={PATH_AUTH.register}
+                color="inherit"
+                sx={{
+                  color: "#666666",
+                  textDecoration: "none",
+                  "&:hover": { color: "#2C2C2C" },
+                }}
+              >
+                Đăng ký
               </Link>
               <Link
                 href="#"
@@ -206,7 +218,7 @@ const Footer: React.FC = () => {
                   "&:hover": { color: "#2C2C2C" },
                 }}
               >
-                Liên kết Bảy
+                Hướng dẫn sử dụng
               </Link>
               <Link
                 href="#"
@@ -217,7 +229,7 @@ const Footer: React.FC = () => {
                   "&:hover": { color: "#2C2C2C" },
                 }}
               >
-                Liên kết Tám
+                Trung tâm trợ giúp
               </Link>
               <Link
                 href="#"
@@ -228,18 +240,7 @@ const Footer: React.FC = () => {
                   "&:hover": { color: "#2C2C2C" },
                 }}
               >
-                Liên kết Chín
-              </Link>
-              <Link
-                href="#"
-                color="inherit"
-                sx={{
-                  color: "#666666",
-                  textDecoration: "none",
-                  "&:hover": { color: "#2C2C2C" },
-                }}
-              >
-                Liên kết Mười
+                Liên hệ
               </Link>
             </Box>
           </Box>
@@ -347,7 +348,7 @@ const Footer: React.FC = () => {
           }}
         >
           <Typography variant="body2" sx={{ color: "#666666" }}>
-            © 2025 Relume. Tất cả quyền được bảo lưu.
+            © 2025 TASCO. Tất cả quyền được bảo lưu.
           </Typography>
           <Box sx={{ display: "flex", gap: 3 }}>
             <Link

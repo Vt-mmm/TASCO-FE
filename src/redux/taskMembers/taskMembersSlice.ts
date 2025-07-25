@@ -82,20 +82,20 @@ const taskMembersSlice = createSlice({
       .addCase(getTaskMembersByTaskIdThunk.fulfilled, (state, action) => {
         state.isLoading = false;
         const response = action.payload as TaskMemberListResponse;
-        
+
         // Validate response structure
         if (!response) {
           state.members = [];
           state.totalCount = 0;
           return;
         }
-        
+
         if (!Array.isArray(response.members)) {
           state.members = [];
         } else {
           state.members = response.members;
         }
-        
+
         state.totalCount = response.totalCount || 0;
         state.pageIndex = response.pageIndex || 1;
         state.pageSize = response.pageSize || 10;

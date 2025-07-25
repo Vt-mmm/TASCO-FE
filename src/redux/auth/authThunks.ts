@@ -53,8 +53,17 @@ interface ApiUserResponse {
   refreshToken?: string;
 }
 
+// Define API Error Response interface for consistent error handling
+interface ApiErrorResponse {
+  success: boolean;
+  message?: string;
+  data?: null;
+  errors?: string[];
+}
+
 // Define RegisterForm interface - Updated to match backend requirements
 interface RegisterForm {
+  fullName: string;
   email: string;
   password: string;
   confirmPassword: string;
@@ -193,17 +202,43 @@ export const loginThunk = createAsyncThunk<
   } catch (error: unknown) {
     const err = error as {
       response?: {
-        data?: {
-          message?: string;
-        };
+        data?: ApiErrorResponse;
       };
       message?: string;
     };
 
-    const errorMessage =
-      err.response?.data?.message ||
-      err.message ||
-      handleResponseMessage("Invalid username or password. Please try again!");
+    // Extract specific error messages from backend response
+    let errorMessage = "Invalid username or password. Please try again!";
+    
+    if (err.response?.data) {
+      const { message, errors } = err.response.data;
+      
+      if (errors && errors.length > 0) {
+        // Use the first specific error from the errors array
+        errorMessage = errors[0];
+        
+        // Handle common login error patterns
+        if (errorMessage.includes("Invalid credentials")) {
+          errorMessage = "Tên đăng nhập hoặc mật khẩu không chính xác.";
+        } else if (errorMessage.includes("Account not found")) {
+          errorMessage = "Tài khoản không tồn tại.";
+        } else if (errorMessage.includes("Account locked")) {
+          errorMessage = "Tài khoản đã bị khóa. Vui lòng liên hệ quản trị viên.";
+        } else if (errorMessage.includes("Email not confirmed")) {
+          errorMessage = "Vui lòng xác nhận email trước khi đăng nhập.";
+        }
+      } else if (message) {
+        // Fallback to general message if no specific errors
+        if (message.includes("Login failed")) {
+          errorMessage = "Đăng nhập thất bại. Vui lòng kiểm tra thông tin.";
+        } else {
+          errorMessage = message;
+        }
+      }
+    } else if (err.message) {
+      errorMessage = err.message;
+    }
+
     thunkAPI.dispatch(setMessageError(errorMessage));
     return thunkAPI.rejectWithValue(errorMessage);
   }
@@ -224,18 +259,19 @@ export const registerThunk = createAsyncThunk<
     if (data && typeof data === "object") {
       const { confirmPassword, ...otherData } = data as RegisterForm;
 
-      // Map frontend field names to backend field names
+      // Map frontend field names to backend field names (backend expects PascalCase)
       const registerData = {
-        email: otherData.email,
-        password: otherData.password,
-        roleId: otherData.roleId,
-        ConfirmPassword: confirmPassword, // Backend expects ConfirmPassword with capital C
+        Email: otherData.email,
+        Password: otherData.password,
+        ConfirmPassword: confirmPassword,
+        FullName: otherData.fullName,
+        RoleId: otherData.roleId,
       };
 
       await axiosClient.post(ROUTES_API_AUTH.REGISTER, registerData);
 
       const message = handleResponseMessage(
-        "Registration successful. Please login to continue."
+        "Registration successful. Please check your email to confirm your account."
       );
       thunkAPI.dispatch(setMessageSuccess(message));
 
@@ -247,19 +283,47 @@ export const registerThunk = createAsyncThunk<
       throw new Error("Invalid registration data");
     }
   } catch (error: unknown) {
-    const err = error as {
+    const axiosError = error as {
       response?: {
-        data?: {
-          message?: string;
-        };
+        data?: ApiErrorResponse;
+        status?: number;
       };
       message?: string;
     };
 
-    const errorMessage =
-      err.response?.data?.message ||
-      err.message ||
-      handleResponseMessage("Registration failed. Please try again!");
+    // Extract specific error messages from backend response
+    let errorMessage = "Registration failed. Please try again!";
+    
+    if (axiosError?.response?.data) {
+      const { message, errors } = axiosError.response.data;
+      
+      if (errors && Array.isArray(errors) && errors.length > 0) {
+        // Use the first specific error from the errors array
+        errorMessage = errors[0];
+        
+        // Handle common error patterns and make them more user-friendly
+        if (errorMessage.toLowerCase().includes("username") && errorMessage.toLowerCase().includes("already taken")) {
+          errorMessage = "Tên người dùng đã được sử dụng. Vui lòng chọn tên khác.";
+        } else if (errorMessage.toLowerCase().includes("username") && errorMessage.toLowerCase().includes("invalid")) {
+          errorMessage = "Tên người dùng không hợp lệ. Chỉ được sử dụng chữ cái và số.";
+        } else if (errorMessage.toLowerCase().includes("email") && (errorMessage.toLowerCase().includes("already exists") || errorMessage.toLowerCase().includes("already"))) {
+          errorMessage = "Email đã được đăng ký. Vui lòng sử dụng email khác.";
+        } else if (errorMessage.toLowerCase().includes("password")) {
+          errorMessage = "Mật khẩu không đáp ứng yêu cầu bảo mật.";
+        }
+      } else if (message) {
+        // Fallback to general message if no specific errors
+        if (message.includes("User registration failed")) {
+          errorMessage = "Đăng ký thất bại. Vui lòng kiểm tra thông tin và thử lại.";
+        } else {
+          errorMessage = message;
+        }
+      }
+    } else if (axiosError?.message) {
+      errorMessage = axiosError.message;
+    }
+
+    // Don't use handleResponseMessage for already processed error messages
     thunkAPI.dispatch(setMessageError(errorMessage));
     return thunkAPI.rejectWithValue(errorMessage);
   }
@@ -331,13 +395,28 @@ export const getUserInfoThunk = createAsyncThunk<
     throw new Error(response?.message || "Invalid response from server");
   } catch (error) {
     const err = error as {
-      response?: { data?: { message?: string } };
+      response?: { 
+        data?: ApiErrorResponse;
+      };
       message?: string;
     };
-    const errorMessage =
-      err?.response?.data?.message ||
-      err?.message ||
-      "An unknown error occurred";
+
+    // Extract specific error messages from backend response
+    let errorMessage = "An unknown error occurred";
+    
+    if (err?.response?.data) {
+      const { message, errors } = err.response.data;
+      
+      if (errors && errors.length > 0) {
+        // Use the first specific error from the errors array
+        errorMessage = errors[0];
+      } else if (message) {
+        errorMessage = message;
+      }
+    } else if (err?.message) {
+      errorMessage = err.message;
+    }
+
     return rejectWithValue(errorMessage);
   }
 });

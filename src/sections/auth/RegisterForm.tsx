@@ -9,7 +9,6 @@ import {
   Divider,
   InputAdornment,
   IconButton,
-  Alert,
   CircularProgress,
 } from "@mui/material";
 import ArrowForwardIcon from "@mui/icons-material/ArrowForward";
@@ -26,6 +25,7 @@ import { Role } from "../../common/enums/role.enum";
 
 // Schema validation - Simplified without roleId in UI
 const schema = yup.object().shape({
+  fullName: yup.string().required("Họ và tên là bắt buộc"),
   email: yup.string().email("Email không hợp lệ").required("Email là bắt buộc"),
   password: yup
     .string()
@@ -39,6 +39,7 @@ const schema = yup.object().shape({
 
 // Define register form interface for UI
 interface RegisterFormType {
+  fullName: string;
   email: string;
   password: string;
   confirmPassword: string;
@@ -47,17 +48,15 @@ interface RegisterFormType {
 const RegisterForm: React.FC = () => {
   const navigate = useNavigate();
   const dispatch = useAppDispatch();
-  const { isLoading, errorMessage } = useAppSelector((state) => state.auth);
+  const { isLoading } = useAppSelector((state) => state.auth);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-  const [localErrorMessage, setLocalErrorMessage] = useState<string | null>(
-    null
-  );
 
   // Setup react-hook-form with validation
   const methods = useForm<RegisterFormType>({
     resolver: yupResolver(schema),
     defaultValues: {
+      fullName: "",
       email: "",
       password: "",
       confirmPassword: "",
@@ -84,18 +83,11 @@ const RegisterForm: React.FC = () => {
     try {
       // Use the register thunk from Redux
       await dispatch(register(params)).unwrap();
-      setLocalErrorMessage(null);
 
       // Navigation will be handled by the thunk
     } catch (error: unknown) {
+      // Error is now handled by Redux state and displayed in toast/notification
       console.error("Register error:", error);
-      if (typeof error === "string") {
-        setLocalErrorMessage(error);
-      } else if (error && typeof error === "object" && "message" in error) {
-        setLocalErrorMessage((error as { message: string }).message);
-      } else {
-        setLocalErrorMessage("Đăng ký thất bại. Vui lòng thử lại.");
-      }
     }
   };
 
@@ -109,11 +101,40 @@ const RegisterForm: React.FC = () => {
       >
         <form onSubmit={handleSubmit(onSubmit)}>
           <Stack spacing={2.5}>
-            {(localErrorMessage || errorMessage) && (
+            {/* Error message is now handled by Redux state and displayed elsewhere */}
+            {/* {(localErrorMessage || errorMessage) && (
               <Alert severity="error" sx={{ mb: 2 }}>
                 {localErrorMessage || errorMessage}
               </Alert>
-            )}
+            )} */}
+
+            <Box>
+              <Typography variant="body2" mb={1}>
+                Họ và tên
+              </Typography>
+              <Controller
+                name="fullName"
+                control={control}
+                render={({ field }) => (
+                  <TextField
+                    {...field}
+                    variant="outlined"
+                    fullWidth
+                    required
+                    placeholder="Họ và tên"
+                    size="small"
+                    error={!!errors.fullName}
+                    helperText={errors.fullName?.message}
+                    InputProps={{
+                      sx: {
+                        borderRadius: 4,
+                        backgroundColor: "#FFFFFF",
+                      },
+                    }}
+                  />
+                )}
+              />
+            </Box>
 
             <Box>
               <Typography variant="body2" mb={1}>

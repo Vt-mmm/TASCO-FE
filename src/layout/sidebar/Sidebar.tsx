@@ -15,6 +15,7 @@ import { Role } from "../../common/enums";
 import { useAppSelector } from "../../redux/configStore";
 import { useConfigSidebar } from "./useConfigSidebar";
 import { Close } from "@mui/icons-material";
+import TascoLogo from "../../assets/Tasco.png";
 // ----------------------------------------------------------------------
 
 const NAV_WIDTH = 280;
@@ -69,6 +70,7 @@ export function Sidebar({ openNav, onCloseNav }: SidebarProps) {
 
   useEffect(() => {
     if (openNav) onCloseNav();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pathname]);
 
   const renderContent = (
@@ -141,7 +143,11 @@ export function Sidebar({ openNav, onCloseNav }: SidebarProps) {
             },
           }}
         >
-          <img alt="Tell Me Logo" style={{ height: 50, width: "auto" }} />
+          <img
+            src={TascoLogo}
+            alt="TASCO Logo"
+            style={{ height: 50, width: "auto" }}
+          />
         </Box>
       </Box>
 

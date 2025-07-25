@@ -17,6 +17,7 @@ import { PATH_AUTH, PATH_USER } from "../../../routes/paths";
 import { useAppSelector, useAppDispatch } from "../../../redux/configStore";
 import { logoutThunk } from "../../../redux/auth/authThunks";
 import { getAccessToken } from "../../../utils";
+import TascoLogo from "../../../assets/Tasco.png";
 
 const Header: React.FC = () => {
   const navigate = useNavigate();
@@ -58,10 +59,10 @@ const Header: React.FC = () => {
       <Container maxWidth="xl">
         <Toolbar disableGutters>
           {/* Logo */}
-          <Typography
-            variant="h5"
-            noWrap
-            component="div"
+          <Box
+            component="img"
+            src={TascoLogo}
+            alt="TASCO Logo"
             onClick={() => {
               // Navigate based on authentication status
               if (isAuthenticated && accessToken) {
@@ -73,17 +74,13 @@ const Header: React.FC = () => {
             sx={{
               mr: 2,
               display: { xs: "none", md: "flex" },
-              fontWeight: 700,
-              color: "#2C2C2C",
-              fontStyle: "italic",
+              height: 40,
               cursor: "pointer",
               "&:hover": {
                 opacity: 0.8,
               },
             }}
-          >
-            Logo
-          </Typography>
+          />
 
           {/* Mobile menu */}
           <Box sx={{ flexGrow: 1, display: { xs: "flex", md: "none" } }}>
@@ -161,10 +158,10 @@ const Header: React.FC = () => {
           </Box>
 
           {/* Mobile logo */}
-          <Typography
-            variant="h5"
-            noWrap
-            component="div"
+          <Box
+            component="img"
+            src={TascoLogo}
+            alt="TASCO Logo"
             onClick={() => {
               // Navigate based on authentication status
               if (isAuthenticated && accessToken) {
@@ -177,17 +174,13 @@ const Header: React.FC = () => {
               mr: 2,
               display: { xs: "flex", md: "none" },
               flexGrow: 1,
-              fontWeight: 700,
-              color: "#2C2C2C",
-              fontStyle: "italic",
+              height: 32,
               cursor: "pointer",
               "&:hover": {
                 opacity: 0.8,
               },
             }}
-          >
-            Logo
-          </Typography>
+          />
 
           {/* Desktop menu */}
           <Box sx={{ flexGrow: 1, display: { xs: "none", md: "flex" }, ml: 4 }}>

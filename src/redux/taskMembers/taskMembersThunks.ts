@@ -41,7 +41,7 @@ export const getTaskMembersByTaskIdThunk = createAsyncThunk(
   ) => {
     try {
       const { workTaskId, pageIndex = 1, pageSize = 10 } = params;
-      
+
       const queryParams = new URLSearchParams({
         pageIndex: pageIndex.toString(),
         pageSize: pageSize.toString(),
@@ -60,7 +60,11 @@ export const getTaskMembersByTaskIdThunk = createAsyncThunk(
 
       if (response && typeof response === "object" && "data" in response) {
         taskMemberData = response.data as TaskMemberListResponse;
-      } else if (response && typeof response === "object" && "taskMembers" in response) {
+      } else if (
+        response &&
+        typeof response === "object" &&
+        "taskMembers" in response
+      ) {
         // API returns {taskMembers: [], totalCount: number, ...} format
         const apiResponse = response as {
           taskMembers: TaskMember[];
@@ -73,13 +77,14 @@ export const getTaskMembersByTaskIdThunk = createAsyncThunk(
           totalCount: apiResponse.totalCount || 0,
           pageIndex: apiResponse.currentPage || 1,
           pageSize: pageSize,
-          hasNextPage: (apiResponse.currentPage || 1) < (apiResponse.pageCount || 1),
+          hasNextPage:
+            (apiResponse.currentPage || 1) < (apiResponse.pageCount || 1),
           hasPreviousPage: (apiResponse.currentPage || 1) > 1,
         };
       } else {
         taskMemberData = response as TaskMemberListResponse;
       }
-      
+
       return taskMemberData;
     } catch (error) {
       const err = error as AxiosError<{ message: string }>;
@@ -137,7 +142,7 @@ export const createTaskMemberThunk = createAsyncThunk(
   ) => {
     try {
       const { workTaskId, memberData } = params;
-      
+
       const response = await callApiWithRetry(() =>
         axiosClient.post(ROUTES_API_TASK_MEMBERS.CREATE(workTaskId), memberData)
       );
@@ -160,7 +165,7 @@ export const createTaskMemberThunk = createAsyncThunk(
       } else {
         throw new Error("Invalid response format");
       }
-      
+
       return taskMemberData;
     } catch (error) {
       const err = error as AxiosError<{ message: string }>;

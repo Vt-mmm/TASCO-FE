@@ -8,12 +8,29 @@ export default defineConfig({
     outDir: 'dist',
     assetsDir: 'assets',
     sourcemap: false,
+    chunkSizeWarningLimit: 2000,
     rollupOptions: {
+      external: [],
       output: {
-        manualChunks: {
-          vendor: ['react', 'react-dom'],
-          mui: ['@mui/material', '@mui/icons-material'],
-          redux: ['@reduxjs/toolkit', 'react-redux']
+        manualChunks: (id) => {
+          if (id.includes('node_modules')) {
+            if (id.includes('@mui/icons-material')) {
+              return 'mui-icons';
+            }
+            if (id.includes('@mui/material')) {
+              return 'mui';
+            }
+            if (id.includes('react') || id.includes('react-dom')) {
+              return 'react-vendor';
+            }
+            if (id.includes('@reduxjs/toolkit') || id.includes('react-redux')) {
+              return 'redux';
+            }
+            if (id.includes('react-router')) {
+              return 'router';
+            }
+            return 'vendor';
+          }
         }
       }
     }
@@ -25,5 +42,16 @@ export default defineConfig({
   preview: {
     port: 4173,
     host: true
+  },
+  optimizeDeps: {
+    exclude: ['@mui/icons-material'],
+    include: [
+      'react', 
+      'react-dom', 
+      '@mui/material',
+      'react-router-dom',
+      '@reduxjs/toolkit',
+      'react-redux'
+    ]
   }
 })

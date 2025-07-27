@@ -154,7 +154,6 @@ const TaskMemberTable: React.FC<TaskMemberTableProps> = ({
               <TableCell>Tên thành viên</TableCell>
               <TableCell>Email</TableCell>
               <TableCell>Vai trò</TableCell>
-              <TableCell>Ngày tham gia</TableCell>
               <TableCell align="center">Hành động</TableCell>
             </TableRow>
           </TableHead>
@@ -205,13 +204,7 @@ const TaskMemberTable: React.FC<TaskMemberTableProps> = ({
                         size="small"
                       />
                     </TableCell>
-                    <TableCell>
-                      {member.assignedAt
-                        ? new Date(member.assignedAt).toLocaleDateString(
-                            "vi-VN"
-                          )
-                        : "Invalid Date"}
-                    </TableCell>
+
                     <TableCell align="center">
                       {isTaskOwner ? (
                         <>

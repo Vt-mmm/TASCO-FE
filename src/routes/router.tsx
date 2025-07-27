@@ -3,7 +3,6 @@ import { Routes, Route as ReactRoute, Navigate } from "react-router-dom";
 
 // Routes config
 import { userRoutes } from "./config/userRoutes";
-import { adminRoutes } from "./config/adminRoutes";
 import {
   PATH_AUTH,
   PATH_ERROR,
@@ -129,12 +128,6 @@ const renderRoutes = (
   ));
 };
 
-const renderAdminRoutes = (routes: typeof adminRoutes) => {
-  return routes.map((route, index) => (
-    <ReactRoute key={index} path={route.path} element={route.component} />
-  ));
-};
-
 function AppRouter() {
   const [isInitializing, setIsInitializing] = useState(true);
 
@@ -186,10 +179,8 @@ function AppRouter() {
         {/* User Routes from config */}
         {renderRoutes(userRoutes, isAuthenticated, accessToken)}
 
-        {/* ADMIN ROUTES - Protected by AdminRouter */}
-        <ReactRoute element={<AdminRouter />}>
-          {renderAdminRoutes(adminRoutes)}
-        </ReactRoute>
+        {/* ADMIN ROUTES - Protected by AdminRouter with wildcard pattern */}
+        <ReactRoute path="/admin/*" element={<AdminRouter />} />
 
         {/* Legacy routes - will be removed later */}
 

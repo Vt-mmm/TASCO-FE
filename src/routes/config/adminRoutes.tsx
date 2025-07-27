@@ -1,6 +1,5 @@
 import { lazy } from "react";
 import { Route } from "../../common/types/route";
-import { PATH_ADMIN } from "../paths";
 import Loadable from "../../components/Loadable";
 
 const AdminDashboardPage = Loadable(
@@ -9,7 +8,7 @@ const AdminDashboardPage = Loadable(
 
 export const adminRoutes: Route[] = [
   {
-    path: PATH_ADMIN.dashboard,
+    path: "/dashboard", // Relative path - will be /admin/dashboard when combined
     component: <AdminDashboardPage />,
     index: false,
   },

@@ -12,8 +12,11 @@ import {
   ListItemText,
   Chip,
   Alert,
+  Avatar,
+  IconButton,
+  Tooltip,
 } from "@mui/material";
-import { People, PersonRemove, Close } from "@mui/icons-material";
+import { People, PersonRemove, Close, AdminPanelSettings, Star, Person } from "@mui/icons-material";
 import { ProjectMember } from "../../../common/models/project";
 import {
   getUserDisplayName,
@@ -106,6 +109,40 @@ const ManageMembersDialog: React.FC<Props> = ({
     }
   };
 
+  const getRoleIcon = (role?: string) => {
+    switch (role?.toLowerCase()) {
+      case "owner":
+        return <Star sx={{ fontSize: 16 }} />;
+      case "admin":
+        return <AdminPanelSettings sx={{ fontSize: 16 }} />;
+      case "member":
+        return <Person sx={{ fontSize: 16 }} />;
+      default:
+        return <Person sx={{ fontSize: 16 }} />;
+    }
+  };
+
+  const getAvatarColor = (name: string) => {
+    const colors = [
+      "#f44336", "#e91e63", "#9c27b0", "#673ab7",
+      "#3f51b5", "#2196f3", "#03a9f4", "#00bcd4",
+      "#009688", "#4caf50", "#8bc34a", "#cddc39",
+      "#ffeb3b", "#ffc107", "#ff9800", "#ff5722"
+    ];
+    
+    const index = name.length % colors.length;
+    return colors[index];
+  };
+
+  const getInitials = (name: string) => {
+    return name
+      .split(' ')
+      .map(word => word.charAt(0))
+      .join('')
+      .toUpperCase()
+      .slice(0, 2);
+  };
+
   const canRemoveMember = (member: ProjectMember): boolean => {
     // Không thể xóa owner
     if (member.role?.toLowerCase() === "owner") return false;
@@ -196,72 +233,118 @@ const ManageMembersDialog: React.FC<Props> = ({
           </Box>
         ) : (
           <List sx={{ py: 0, mb: 3 }}>
-            {members.map((member) => (
-              <ListItem
-                key={member.id || member.userId}
-                sx={{
-                  border: "1px solid rgba(44, 44, 44, 0.1)",
-                  borderRadius: 2,
-                  mb: 1,
-                  "&:last-child": { mb: 0 },
-                }}
-              >
-                <ListItemText
-                  primary={
-                    <Box display="flex" alignItems="center" gap={1}>
-                      <Typography variant="body1" fontWeight={500}>
-                        {memberDisplayNames.get(member.userId) || "Loading..."}
-                      </Typography>
-                      {currentUserFlags.get(member.userId) && (
-                        <Chip
-                          label="You"
-                          size="small"
-                          sx={{
-                            backgroundColor: "#e3f2fd",
-                            color: "#1976d2",
-                            fontWeight: 500,
-                          }}
-                        />
-                      )}
-                    </Box>
-                  }
-                  secondary={
-                    <Box display="flex" alignItems="center" gap={1} mt={0.5}>
-                      <Chip
-                        label={member.role || "Member"}
-                        size="small"
-                        color={getRoleColor(member.role)}
-                        sx={{ fontWeight: 500 }}
-                      />
-                      <Typography variant="caption" color="#999999">
-                        Joined{" "}
-                        {member.joinedAt
-                          ? new Date(member.joinedAt).toLocaleDateString()
-                          : "Unknown"}
-                      </Typography>
-                    </Box>
-                  }
-                />
-                {canRemoveMember(member) && (
-                  <Button
-                    size="small"
-                    variant="outlined"
-                    color="error"
-                    startIcon={<PersonRemove />}
-                    onClick={() => handleRemoveClick(member)}
-                    disabled={isRemovingMember}
+            {members.map((member) => {
+              const memberName = memberDisplayNames.get(member.userId) || "Loading...";
+              const isCurrentUser = currentUserFlags.get(member.userId);
+              
+              return (
+                <ListItem
+                  key={member.id || member.userId}
+                  sx={{
+                    border: "1px solid rgba(44, 44, 44, 0.1)",
+                    borderRadius: 3,
+                    mb: 2,
+                    p: 2.5,
+                    backgroundColor: isCurrentUser ? "#f8f9ff" : "#ffffff",
+                    borderColor: isCurrentUser ? "#e3f2fd" : "rgba(44, 44, 44, 0.1)",
+                    "&:last-child": { mb: 0 },
+                    "&:hover": {
+                      backgroundColor: isCurrentUser ? "#f0f4ff" : "#fafafa",
+                      transform: "translateY(-1px)",
+                      boxShadow: "0 4px 12px rgba(44, 44, 44, 0.08)",
+                    },
+                    transition: "all 0.2s ease-in-out",
+                  }}
+                >
+                  {/* Avatar */}
+                  <Avatar
                     sx={{
-                      minWidth: "auto",
-                      px: 2,
-                      py: 0.5,
-                      fontSize: "0.8rem",
+                      bgcolor: getAvatarColor(memberName),
+                      width: 48,
+                      height: 48,
+                      mr: 2,
+                      fontWeight: 600,
+                      fontSize: "1.1rem",
                     }}
                   >
-                    {isRemovingMember ? "Đang loại..." : "Loại khỏi dự án"}
-                  </Button>
-                )}
-              </ListItem>
-            ))}
+                    {getInitials(memberName)}
+                  </Avatar>
+
+                  <ListItemText
+                    primary={
+                      <Box display="flex" alignItems="center" gap={1.5} mb={0.5}>
+                        <Typography 
+                          variant="h6" 
+                          sx={{ 
+                            fontWeight: 600, 
+                            color: "#2C2C2C",
+                            fontSize: "1.1rem"
+                          }}
+                        >
+                          {memberName}
+                        </Typography>
+                        {isCurrentUser && (
+                          <Chip
+                            label="You"
+                            size="small"
+                            sx={{
+                              backgroundColor: "#e3f2fd",
+                              color: "#1976d2",
+                              fontWeight: 600,
+                              fontSize: "0.75rem",
+                              height: 24,
+                            }}
+                          />
+                        )}
+                      </Box>
+                    }
+                    secondary={
+                      <Box display="flex" alignItems="center" gap={1}>
+                        <Chip
+                          icon={getRoleIcon(member.role)}
+                          label={member.role || "Member"}
+                          size="small"
+                          color={getRoleColor(member.role)}
+                          sx={{ 
+                            fontWeight: 500,
+                            "& .MuiChip-icon": {
+                              color: "inherit",
+                            }
+                          }}
+                        />
+                      </Box>
+                    }
+                  />
+                  
+                  {canRemoveMember(member) && (
+                    <Tooltip title="Remove from project">
+                      <IconButton
+                        size="small"
+                        onClick={() => handleRemoveClick(member)}
+                        disabled={isRemovingMember}
+                        sx={{
+                          color: "#ff5252",
+                          backgroundColor: "rgba(255, 82, 82, 0.08)",
+                          "&:hover": {
+                            backgroundColor: "rgba(255, 82, 82, 0.12)",
+                            transform: "scale(1.05)",
+                          },
+                          "&:disabled": {
+                            backgroundColor: "rgba(0, 0, 0, 0.04)",
+                            color: "rgba(0, 0, 0, 0.26)",
+                          },
+                          transition: "all 0.2s ease-in-out",
+                          width: 40,
+                          height: 40,
+                        }}
+                      >
+                        <PersonRemove sx={{ fontSize: 20 }} />
+                      </IconButton>
+                    </Tooltip>
+                  )}
+                </ListItem>
+              );
+            })}
           </List>
         )}
 

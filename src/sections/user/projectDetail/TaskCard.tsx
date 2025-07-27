@@ -79,6 +79,11 @@ const TaskCard: React.FC<Props> = ({
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const menuOpen = Boolean(anchorEl);
 
+  // Calculate task objectives completion
+  const completedObjectives = task.taskObjectives?.filter(obj => obj.isCompleted) || [];
+  const totalObjectives = task.taskObjectives?.length || 0;
+  const allObjectivesCompleted = totalObjectives > 0 && completedObjectives.length === totalObjectives;
+
   const handleMenuOpen = (event: React.MouseEvent<HTMLElement>) => {
     event.stopPropagation();
     setAnchorEl(event.currentTarget);
@@ -148,13 +153,16 @@ const TaskCard: React.FC<Props> = ({
             justifyContent: "space-between",
             alignItems: "flex-start",
             mb: 1,
+            minHeight: 40, // Đảm bảo chiều cao tối thiểu
           }}
         >
           <Box
             sx={{
               display: "flex",
-              alignItems: "center",
+              alignItems: "flex-start",
               flex: 1,
+              minWidth: 0, // Cho phép flex item shrink
+              pr: 1,
             }}
           >
             <Typography
@@ -162,10 +170,17 @@ const TaskCard: React.FC<Props> = ({
               sx={{
                 fontWeight: 600,
                 color: "#2C2C2C",
-                flex: 1,
                 lineHeight: 1.3,
-                pr: 1,
+                display: "-webkit-box",
+                WebkitLineClamp: 2, // Giới hạn 2 dòng
+                WebkitBoxOrient: "vertical",
+                overflow: "hidden",
+                textOverflow: "ellipsis",
+                wordBreak: "break-word",
+                flex: 1,
+                minWidth: 0,
               }}
+              title={task.name} // Tooltip để hiển thị tên đầy đủ khi hover
             >
               {task.name}
             </Typography>
@@ -180,12 +195,23 @@ const TaskCard: React.FC<Props> = ({
                     opacity: 1,
                     color: "#1976D2",
                   },
+                  ml: 0.5,
+                  mt: 0.2,
+                  flexShrink: 0, // Không cho icon bị thu nhỏ
                 }}
               />
             )}
           </Box>
 
-          <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
+          <Box 
+            sx={{ 
+              display: "flex", 
+              alignItems: "flex-start", 
+              gap: 0.5,
+              flexShrink: 0, // Không cho phần này bị thu nhỏ
+              ml: 1,
+            }}
+          >
             <Chip
               label={task.status.replace("_", " ")}
               size="small"
@@ -283,15 +309,11 @@ const TaskCard: React.FC<Props> = ({
                   <CheckCircle
                     sx={{
                       fontSize: 12,
-                      color:
-                        task.completedObjectivesCount === task.objectivesCount
-                          ? "#4CAF50"
-                          : "#9E9E9E",
+                      color: allObjectivesCompleted ? "#4CAF50" : "#9E9E9E",
                     }}
                   />
                   <Typography variant="caption" color="#666666">
-                    {task.completedObjectivesCount || 0}/
-                    {task.objectivesCount || task.taskObjectives.length}
+                    {completedObjectives.length}/{totalObjectives}
                   </Typography>
                 </Box>
               </Tooltip>

@@ -209,21 +209,22 @@ export const loginThunk = createAsyncThunk<
 
     // Extract specific error messages from backend response
     let errorMessage = "Invalid username or password. Please try again!";
-    
+
     if (err.response?.data) {
       const { message, errors } = err.response.data;
-      
+
       if (errors && errors.length > 0) {
         // Use the first specific error from the errors array
         errorMessage = errors[0];
-        
+
         // Handle common login error patterns
         if (errorMessage.includes("Invalid credentials")) {
           errorMessage = "Tên đăng nhập hoặc mật khẩu không chính xác.";
         } else if (errorMessage.includes("Account not found")) {
           errorMessage = "Tài khoản không tồn tại.";
         } else if (errorMessage.includes("Account locked")) {
-          errorMessage = "Tài khoản đã bị khóa. Vui lòng liên hệ quản trị viên.";
+          errorMessage =
+            "Tài khoản đã bị khóa. Vui lòng liên hệ quản trị viên.";
         } else if (errorMessage.includes("Email not confirmed")) {
           errorMessage = "Vui lòng xác nhận email trước khi đăng nhập.";
         }
@@ -293,20 +294,32 @@ export const registerThunk = createAsyncThunk<
 
     // Extract specific error messages from backend response
     let errorMessage = "Registration failed. Please try again!";
-    
+
     if (axiosError?.response?.data) {
       const { message, errors } = axiosError.response.data;
-      
+
       if (errors && Array.isArray(errors) && errors.length > 0) {
         // Use the first specific error from the errors array
         errorMessage = errors[0];
-        
+
         // Handle common error patterns and make them more user-friendly
-        if (errorMessage.toLowerCase().includes("username") && errorMessage.toLowerCase().includes("already taken")) {
-          errorMessage = "Tên người dùng đã được sử dụng. Vui lòng chọn tên khác.";
-        } else if (errorMessage.toLowerCase().includes("username") && errorMessage.toLowerCase().includes("invalid")) {
-          errorMessage = "Tên người dùng không hợp lệ. Chỉ được sử dụng chữ cái và số.";
-        } else if (errorMessage.toLowerCase().includes("email") && (errorMessage.toLowerCase().includes("already exists") || errorMessage.toLowerCase().includes("already"))) {
+        if (
+          errorMessage.toLowerCase().includes("username") &&
+          errorMessage.toLowerCase().includes("already taken")
+        ) {
+          errorMessage =
+            "Tên người dùng đã được sử dụng. Vui lòng chọn tên khác.";
+        } else if (
+          errorMessage.toLowerCase().includes("username") &&
+          errorMessage.toLowerCase().includes("invalid")
+        ) {
+          errorMessage =
+            "Tên người dùng không hợp lệ. Chỉ được sử dụng chữ cái và số.";
+        } else if (
+          errorMessage.toLowerCase().includes("email") &&
+          (errorMessage.toLowerCase().includes("already exists") ||
+            errorMessage.toLowerCase().includes("already"))
+        ) {
           errorMessage = "Email đã được đăng ký. Vui lòng sử dụng email khác.";
         } else if (errorMessage.toLowerCase().includes("password")) {
           errorMessage = "Mật khẩu không đáp ứng yêu cầu bảo mật.";
@@ -314,7 +327,8 @@ export const registerThunk = createAsyncThunk<
       } else if (message) {
         // Fallback to general message if no specific errors
         if (message.includes("User registration failed")) {
-          errorMessage = "Đăng ký thất bại. Vui lòng kiểm tra thông tin và thử lại.";
+          errorMessage =
+            "Đăng ký thất bại. Vui lòng kiểm tra thông tin và thử lại.";
         } else {
           errorMessage = message;
         }
@@ -384,7 +398,7 @@ export const getUserInfoThunk = createAsyncThunk<
 >("auth/getUserInfo", async (_, { rejectWithValue }) => {
   try {
     // The interceptor returns the response body, which we type as ApiResponse.
-    const response = (await axiosClient.post(
+    const response = (await axiosClient.get(
       ROUTES_API_ACCOUNTS.GET_INFO
     )) as ApiResponse<AccountInfo>;
 
@@ -395,7 +409,7 @@ export const getUserInfoThunk = createAsyncThunk<
     throw new Error(response?.message || "Invalid response from server");
   } catch (error) {
     const err = error as {
-      response?: { 
+      response?: {
         data?: ApiErrorResponse;
       };
       message?: string;
@@ -403,10 +417,10 @@ export const getUserInfoThunk = createAsyncThunk<
 
     // Extract specific error messages from backend response
     let errorMessage = "An unknown error occurred";
-    
+
     if (err?.response?.data) {
       const { message, errors } = err.response.data;
-      
+
       if (errors && errors.length > 0) {
         // Use the first specific error from the errors array
         errorMessage = errors[0];

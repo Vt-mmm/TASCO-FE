@@ -40,8 +40,6 @@ const ProjectHeader: React.FC<Props> = ({
   project,
   workAreas,
   projectRequests,
-  totalTasks,
-  completedTasks,
   onOpenDialog,
   onRequestDialogOpen,
   onManageMembers,
@@ -199,19 +197,6 @@ const ProjectHeader: React.FC<Props> = ({
             sx={{
               backgroundColor: "#f8f9fa",
               border: "1px solid #e9ecef",
-            }}
-          />
-          <Chip
-            label={`${completedTasks}/${totalTasks} Tasks`}
-            variant="outlined"
-            size="small"
-            sx={{
-              backgroundColor:
-                completedTasks === totalTasks ? "#e8f5e8" : "#fff3e0",
-              border: `1px solid ${
-                completedTasks === totalTasks ? "#c8e6c9" : "#ffcc02"
-              }`,
-              color: completedTasks === totalTasks ? "#2e7d32" : "#f57c00",
             }}
           />
           {project.createdAt && (
